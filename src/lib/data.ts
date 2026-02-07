@@ -7,8 +7,9 @@ export type Debt = {
   amount: number;
   interestRate: number;
   status: 'active' | 'paid' | 'late';
-  nextPaymentDate: string;
-  nextPaymentAmount: number;
+  dueDate: string;
+  paymentType: 'single' | 'installments';
+  nextPaymentAmount?: number;
 };
 
 export const debts: Debt[] = [
@@ -18,7 +19,8 @@ export const debts: Debt[] = [
     amount: 5000,
     interestRate: 0,
     status: 'active',
-    nextPaymentDate: '2024-08-01',
+    dueDate: '2024-08-01',
+    paymentType: 'installments',
     nextPaymentAmount: 500,
   },
   {
@@ -27,8 +29,8 @@ export const debts: Debt[] = [
     amount: 250,
     interestRate: 0,
     status: 'late',
-    nextPaymentDate: '2024-07-15',
-    nextPaymentAmount: 250,
+    dueDate: '2024-07-15',
+    paymentType: 'single',
   },
   {
     id: 'D003',
@@ -36,8 +38,8 @@ export const debts: Debt[] = [
     amount: 4500,
     interestRate: 0,
     status: 'active',
-    nextPaymentDate: '2024-08-05',
-    nextPaymentAmount: 4500,
+    dueDate: '2024-08-05',
+    paymentType: 'single',
   },
   {
     id: 'D004',
@@ -45,7 +47,8 @@ export const debts: Debt[] = [
     amount: 25000,
     interestRate: 4.5,
     status: 'active',
-    nextPaymentDate: '2024-08-10',
+    dueDate: '2024-08-10',
+    paymentType: 'installments',
     nextPaymentAmount: 1200,
   },
   {
@@ -54,17 +57,17 @@ export const debts: Debt[] = [
     amount: 150,
     interestRate: 0,
     status: 'paid',
-    nextPaymentDate: '-',
-    nextPaymentAmount: 0,
+    dueDate: '2024-06-10',
+    paymentType: 'single',
   },
   {
     id: 'D006',
     creditor: { name: 'לאה כהן', avatar: 'avatar2' },
     amount: 1200,
-    interestRate: 2.0,
+    interestRate: 0,
     status: 'active',
-    nextPaymentDate: '2024-08-20',
-    nextPaymentAmount: 200,
+    dueDate: '2024-08-20',
+    paymentType: 'single',
   }
 ];
 

@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [debts] = React.useState(initialDebts);
 
   const totalDebt = debts.filter(l => l.status !== 'paid').reduce((acc, debt) => acc + debt.amount, 0);
-  const monthlyRepayment = debts.filter(l => l.status === 'active').reduce((acc, debt) => acc + debt.nextPaymentAmount, 0);
+  const monthlyRepayment = debts.filter(d => d.status === 'active' && d.paymentType === 'installments').reduce((acc, debt) => acc + (debt.nextPaymentAmount || 0), 0);
   const lateDebts = debts.filter(l => l.status === 'late').length;
 
   return (

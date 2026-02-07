@@ -14,13 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
@@ -33,9 +27,20 @@ const debtFormSchema = z.object({
   creditorName: z.string().min(2, { message: "שם הנושה חייב להכיל לפחות 2 תווים." }),
   amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
   interestRate: z.coerce.number().min(0, { message: "הריבית לא יכולה להיות שלילית." }),
-  debtType: z.string({ required_error: "יש לבחור סוג חוב." }),
-  paymentDate: z.date({ required_error: "יש לבחור תאריך." }),
+  dueDate: z.date({ required_error: "יש לבחור תאריך." }),
+  paymentType: z.enum(['single', 'installments'], { required_error: 'יש לבחור אופן תשלום.'}),
+  nextPaymentAmount: z.coerce.number().positive().optional(),
+})
+.refine(data => {
+    if (data.paymentType === 'installments' && (data.nextPaymentAmount === undefined || data.nextPaymentAmount <= 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "יש להזין סכום החזר חודשי עבור תשלומים.",
+    path: ["nextPaymentAmount"],
 });
+
 
 export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: Debt | null }) {
   const { toast } = useToast();
@@ -43,8 +48,11 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
     resolver: zodResolver(debtFormSchema),
     defaultValues: {
       creditorName: "",
+      paymentType: "single",
     },
   });
+
+  const paymentType = form.watch("paymentType");
 
   React.useEffect(() => {
     if (debt) {
@@ -52,16 +60,18 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
         creditorName: debt.creditor.name,
         amount: debt.amount,
         interestRate: debt.interestRate,
-        debtType: 'personal', // This value is mocked as it's not in the Debt type
-        paymentDate: debt.nextPaymentDate !== '-' ? new Date(debt.nextPaymentDate) : new Date(),
+        dueDate: debt.dueDate !== '-' ? new Date(debt.dueDate) : new Date(),
+        paymentType: debt.paymentType,
+        nextPaymentAmount: debt.nextPaymentAmount,
       });
     } else {
       form.reset({
         creditorName: "",
         amount: undefined,
         interestRate: undefined,
-        debtType: undefined,
-        paymentDate: undefined,
+        dueDate: undefined,
+        paymentType: "single",
+        nextPaymentAmount: undefined,
       });
     }
   }, [debt, form]);
@@ -120,36 +130,45 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
               )}
             />
         </div>
+
+        <FormField
+          control={form.control}
+          name="paymentType"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>אופן תשלום</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex space-x-4 space-x-reverse"
+                >
+                  <FormItem className="flex items-center space-x-2 space-x-reverse">
+                    <FormControl>
+                      <RadioGroupItem value="single" id="single" />
+                    </FormControl>
+                    <FormLabel htmlFor="single" className="font-normal">תשלום חד פעמי</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-x-reverse">
+                    <FormControl>
+                      <RadioGroupItem value="installments" id="installments" />
+                    </FormControl>
+                    <FormLabel htmlFor="installments" className="font-normal">תשלומים</FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
-              name="debtType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>סוג חוב</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר סוג" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="personal">אישי</SelectItem>
-                      <SelectItem value="supplier">ספק</SelectItem>
-                      <SelectItem value="loan">הלוואה</SelectItem>
-                      <SelectItem value="rent">שכירות</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="paymentDate"
+              name="dueDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
-                  <FormLabel>תאריך תשלום הבא</FormLabel>
+                  <FormLabel>תאריך יעד לתשלום</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -182,6 +201,21 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
                 </FormItem>
               )}
             />
+            {paymentType === 'installments' && (
+                <FormField
+                  control={form.control}
+                  name="nextPaymentAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>החזר חודשי (₪)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="500" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
         </div>
         <Button type="submit" className="w-full">
             <PlusCircle className="ms-2 h-4 w-4" />

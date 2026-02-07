@@ -39,7 +39,6 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { cn } from '@/lib/utils';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -97,8 +96,9 @@ export default function DebtsPage() {
             <TableRow>
               <TableHead>נושה</TableHead>
               <TableHead className="hidden sm:table-cell">סכום</TableHead>
+              <TableHead className="hidden md:table-cell">החזר חודשי</TableHead>
               <TableHead className="hidden sm:table-cell">ריבית</TableHead>
-              <TableHead className="hidden md:table-cell">תשלום הבא</TableHead>
+              <TableHead className="hidden md:table-cell">תאריך יעד</TableHead>
               <TableHead>סטטוס</TableHead>
               <TableHead>
                 <span className="sr-only">פעולות</span>
@@ -118,8 +118,11 @@ export default function DebtsPage() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">₪{debt.amount.toLocaleString('he-IL')}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {debt.paymentType === 'installments' && debt.nextPaymentAmount ? `₪${debt.nextPaymentAmount.toLocaleString('he-IL')}` : '-'}
+                </TableCell>
                 <TableCell className="hidden sm:table-cell">{debt.interestRate}%</TableCell>
-                <TableCell className="hidden md:table-cell">{debt.nextPaymentDate}</TableCell>
+                <TableCell className="hidden md:table-cell">{debt.dueDate}</TableCell>
                 <TableCell>
                   <Badge variant={statusMap[debt.status].variant}>
                     {statusMap[debt.status].text}
@@ -177,14 +180,23 @@ export default function DebtsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </CardHeader>
-          <CardContent className="flex-grow space-y-2">
+          <CardContent className="flex-grow space-y-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">סכום החוב</p>
               <p className="font-headline text-2xl font-bold">₪{debt.amount.toLocaleString('he-IL')}</p>
             </div>
+             <div>
+              <p className="text-sm font-medium text-muted-foreground">אופן תשלום</p>
+              <p className="text-sm">
+                {debt.paymentType === 'single' ? 'תשלום חד פעמי' : `תשלומים`}
+                {debt.paymentType === 'installments' && debt.nextPaymentAmount && (
+                  <span className="text-muted-foreground"> (₪${debt.nextPaymentAmount.toLocaleString('he-IL')} הבא)</span>
+                )}
+                </p>
+            </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">תשלום הבא</p>
-              <p>{debt.nextPaymentDate}</p>
+              <p className="text-sm font-medium text-muted-foreground">תאריך יעד</p>
+              <p className="text-sm">{debt.dueDate}</p>
             </div>
           </CardContent>
           <CardFooter className="text-xs text-muted-foreground">
