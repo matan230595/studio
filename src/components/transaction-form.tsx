@@ -69,13 +69,13 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       {
         ...transaction,
         dueDate: new Date(transaction.dueDate),
-        amount: transaction.amount || undefined,
-        creditorName: transaction.creditor.name || "",
-        creditorAvatar: transaction.creditor.avatar || "",
+        amount: transaction.amount ?? undefined,
+        creditorName: transaction.creditor.name ?? "",
+        creditorAvatar: transaction.creditor.avatar ?? "",
         ...(transaction.type === 'loan' && {
           paymentType: transaction.paymentType,
           interestRate: transaction.interestRate ?? 0,
-          nextPaymentAmount: transaction.nextPaymentAmount || undefined,
+          nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
         })
       }
     ) : {
@@ -108,13 +108,13 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       const defaultValues = {
         ...transaction,
         dueDate: new Date(transaction.dueDate),
-        amount: transaction.amount || undefined,
-        creditorName: transaction.creditor.name || "",
-        creditorAvatar: transaction.creditor.avatar || "",
+        amount: transaction.amount ?? undefined,
+        creditorName: transaction.creditor.name ?? "",
+        creditorAvatar: transaction.creditor.avatar ?? "",
         ...(transaction.type === 'loan' ? {
           paymentType: transaction.paymentType,
           interestRate: transaction.interestRate ?? 0,
-          nextPaymentAmount: transaction.nextPaymentAmount || undefined,
+          nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
         } : { paymentType: transaction.paymentType || 'single'})
       };
       // @ts-ignore
@@ -131,7 +131,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
         nextPaymentAmount: undefined,
       });
     }
-  }, [transaction, fixedType, form]);
+  }, [transaction, fixedType, form.reset]);
   
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newOrUpdatedTransaction: Transaction = {
@@ -211,7 +211,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
             <FormItem>
               <FormLabel>{type === 'loan' ? 'שם המלווה' : 'שם הנושה'}</FormLabel>
               <FormControl>
-                <Input placeholder={type === 'loan' ? 'לדוגמה: בנק לאומי, יעקב כהן' : 'לדוגמה: בזק, ועד בית'} {...field} />
+                <Input placeholder={type === 'loan' ? 'לדוגמה: בנק לאומי, יעקב כהן' : 'לדוגמה: בזק, ועד בית'} {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -276,7 +276,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                 <FormItem>
                   <FormLabel>{type === 'loan' ? 'סכום הקרן' : 'סכום החוב'} (₪)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="5,000" {...field} />
+                    <Input type="number" placeholder="5,000" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -290,7 +290,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                   <FormItem>
                     <FormLabel>ריבית שנתית (%)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.1" placeholder="0" {...field} />
+                      <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -379,7 +379,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                     <FormItem>
                       <FormLabel>החזר חודשי (₪)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="500" {...field} />
+                        <Input type="number" placeholder="500" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
