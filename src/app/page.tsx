@@ -8,9 +8,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { transactions as initialTransactions } from '@/lib/data';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+
+const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
+  active: { text: 'פעיל', variant: 'default' },
+  paid: { text: 'שולם', variant: 'secondary' },
+  late: { text: 'בפיגור', variant: 'destructive' },
+};
 
 export default function Dashboard() {
   const [transactions] = React.useState(initialTransactions);
@@ -19,6 +33,14 @@ export default function Dashboard() {
   const monthlyRepayment = transactions.filter(d => d.status === 'active' && d.paymentType === 'installments').reduce((acc, item) => acc + (item.nextPaymentAmount || 0), 0);
   const lateItems = transactions.filter(l => l.status === 'late').length;
   const activeItems = transactions.filter(l => l.status === 'active').length;
+
+  const lateTransactions = transactions.filter(t => t.status === 'late').sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  const upcomingTransactions = transactions
+    .filter(t => t.status === 'active' && new Date(t.dueDate) >= new Date())
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .slice(0, 5);
+
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -76,32 +98,84 @@ export default function Dashboard() {
           </Card>
         </div>
         
-        <Card>
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+          <Card>
             <CardHeader>
-              <CardTitle className="font-headline">פעולות מהירות</CardTitle>
-              <CardDescription>
-                נווט לעמודים הרלוונטיים לניהול ההתחייבויות שלך.
-              </CardDescription>
+                <CardTitle>פריטים דחופים (באיחור)</CardTitle>
+                <CardDescription>התחייבויות שמועד פירעונן עבר ויש לטפל בהן.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-4">
-              <Button asChild>
-                <Link href="/debts">
-                    <Banknote className="ms-2" />
-                    ניהול חובות
-                </Link>
-              </Button>
-               <Button asChild>
-                <Link href="/loans">
-                    <Landmark className="ms-2" />
-                    ניהול הלוואות
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/reports">מעבר לדוחות</Link>
-              </Button>
+            <CardContent>
+                {lateTransactions.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>שם</TableHead>
+                            <TableHead>סכום</TableHead>
+                            <TableHead>ת. יעד</TableHead>
+                            <TableHead>סוג</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {lateTransactions.map((item) => (
+                        <TableRow key={item.id} className="text-destructive hover:bg-destructive/10">
+                            <TableCell className="font-medium">{item.creditor.name}</TableCell>
+                            <TableCell>₪{item.amount.toLocaleString('he-IL')}</TableCell>
+                            <TableCell>{item.dueDate}</TableCell>
+                            <TableCell>
+                                <Link href={item.type === 'loan' ? '/loans' : '/debts'}>
+                                    <Badge variant="destructive">{item.type === 'loan' ? 'הלוואה' : 'חוב'}</Badge>
+                                </Link>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                ) : (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                    <p>אין פריטים בפיגור. כל הכבוד!</p>
+                </div>
+                )}
             </CardContent>
-        </Card>
-
+          </Card>
+          <Card>
+            <CardHeader>
+                <CardTitle>5 התשלומים הקרובים</CardTitle>
+                <CardDescription>התחייבויות שיש לשלם בקרוב. מומלץ להיערך מראש.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {upcomingTransactions.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>שם</TableHead>
+                            <TableHead>סכום</TableHead>
+                            <TableHead>ת. יעד</TableHead>
+                            <TableHead>סוג</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {upcomingTransactions.map((item) => (
+                            <TableRow key={item.id}>
+                                <TableCell className="font-medium">{item.creditor.name}</TableCell>
+                                <TableCell>₪{(item.nextPaymentAmount || item.amount).toLocaleString('he-IL')}</TableCell>
+                                <TableCell>{item.dueDate}</TableCell>
+                                <TableCell>
+                                    <Link href={item.type === 'loan' ? '/loans' : '/debts'}>
+                                      <Badge variant="outline">{item.type === 'loan' ? 'הלוואה' : 'חוב'}</Badge>
+                                    </Link>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                ) : (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                    <p>אין תשלומים קרובים במערכת.</p>
+                </div>
+                )}
+            </CardContent>
+          </Card>
+        </div>
     </div>
   );
 }

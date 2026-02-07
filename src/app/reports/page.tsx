@@ -1,9 +1,9 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from "recharts"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { transactions } from "@/lib/data";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent, ChartLegendContent } from "@/components/ui/chart";
 
 export default function ReportsPage() {
 
@@ -18,10 +18,39 @@ export default function ReportsPage() {
             return acc;
         }, {} as Record<string, number>);
 
-    const chartData = Object.entries(debtByCreditor).map(([name, total]) => ({
+    const barChartData = Object.entries(debtByCreditor).map(([name, total]) => ({
         name,
         total,
     })).sort((a, b) => b.total - a.total);
+
+    const typeData = transactions
+        .filter((t) => t.status !== "paid")
+        .reduce(
+        (acc, curr) => {
+            acc[curr.type] += curr.amount;
+            return acc;
+        },
+        { debt: 0, loan: 0 }
+        );
+
+    const pieChartData = [
+        { type: "חובות", amount: typeData.debt, fill: "var(--color-chart-2)" },
+        { type: "הלוואות", amount: typeData.loan, fill: "var(--color-chart-4)" },
+    ];
+    
+    const pieChartConfig = {
+      amount: {
+        label: "סכום",
+      },
+      חובות: {
+        label: "חובות",
+        color: "hsl(var(--chart-2))",
+      },
+      הלוואות: {
+        label: "הלוואות",
+        color: "hsl(var(--chart-4))",
+      },
+    }
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -33,37 +62,60 @@ export default function ReportsPage() {
           צפה בדוחות וניתוחים על מצב ההתחייבויות שלך.
         </p>
       </header>
-      <Card>
-        <CardHeader>
-          <CardTitle>חובות לפי נושה</CardTitle>
-          <CardDescription>ניתוח סך החובות הפתוחים לכל גורם, מהגבוה לנמוך.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <ChartContainer config={{
-                total: {
-                  label: "סך חוב",
-                  color: "hsl(var(--primary))",
-                },
-              }} className="h-[400px] w-full">
-             <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis 
-                    dataKey="name" 
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 15)}
-                />
-                <YAxis />
-                <Tooltip 
-                    cursor={false} 
-                    content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Bar dataKey="total" fill="var(--color-total)" radius={8} />
-             </BarChart>
-           </ChartContainer>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+        <Card>
+            <CardHeader>
+            <CardTitle>חובות לפי נושה</CardTitle>
+            <CardDescription>ניתוח סך החובות הפתוחים לכל גורם, מהגבוה לנמוך.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <ChartContainer config={{
+                    total: {
+                    label: "סך חוב",
+                    color: "hsl(var(--primary))",
+                    },
+                }} className="h-[400px] w-full">
+                <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }} layout="vertical">
+                    <CartesianGrid horizontal={false} />
+                    <XAxis type="number" dataKey="total" />
+                    <YAxis 
+                        dataKey="name" 
+                        type="category"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        width={100}
+                        tickFormatter={(value) => value.slice(0, 15)}
+                    />
+                    <Tooltip 
+                        cursor={false} 
+                        content={<ChartTooltipContent indicator="dot" />}
+                    />
+                    <Bar dataKey="total" fill="var(--color-total)" radius={5} />
+                </BarChart>
+            </ChartContainer>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+            <CardTitle>התפלגות לפי סוג</CardTitle>
+            <CardDescription>השוואה ויזואלית בין סך החובות לסך ההלוואות הפעילים.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={pieChartConfig} className="h-[400px] w-full">
+                    <PieChart>
+                    <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Pie data={pieChartData} dataKey="amount" nameKey="type" cx="50%" cy="50%" innerRadius={60} strokeWidth={5}>
+                        {pieChartData.map((entry) => (
+                            <Cell key={entry.type} fill={entry.fill} />
+                        ))}
+                        </Pie>
+                    <Legend content={<ChartLegendContent />} />
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
