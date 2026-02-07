@@ -23,7 +23,7 @@
           "type": "object",
           "properties": {
             "name": { "type": "string" },
-            "avatar": { "type": "string" }
+            "avatar": { "type": "string", "description": "A reference to a placeholder image ID or a data URI of a generated image." }
           },
           "required": ["name", "avatar"]
         },

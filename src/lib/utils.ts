@@ -7,11 +7,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const getAvatarUrl = (avatarId: string) => {
+  if (!avatarId) return `https://picsum.photos/seed/placeholder/100/100`;
+  if (avatarId.startsWith('data:image')) {
+    return avatarId;
+  }
   const image = PlaceHolderImages.find(img => img.id === avatarId);
   return image ? image.imageUrl : `https://picsum.photos/seed/${avatarId}/100/100`;
 };
 
 export const getAiHint = (avatarId: string) => {
+  if (!avatarId || avatarId.startsWith('data:image')) {
+    return '';
+  }
   const image = PlaceHolderImages.find(img => img.id === avatarId);
   return image ? image.imageHint : 'person face';
 }
