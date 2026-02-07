@@ -1,4 +1,4 @@
-export type Loan = {
+export type Debt = {
   id: string;
   borrower: {
     name: string;
@@ -11,7 +11,7 @@ export type Loan = {
   nextPaymentAmount: number;
 };
 
-export const loans: Loan[] = [
+export const debts: Debt[] = [
   {
     id: 'L001',
     borrower: { name: 'ישראל ישראלי', avatar: 'avatar1' },
@@ -63,13 +63,13 @@ export type Activity = {
   id: string;
   description: string;
   timestamp: string;
-  loanId: string;
+  debtId: string;
 };
 
 export const activities: Activity[] = [
-  { id: 'A01', description: 'תשלום בסך ₪1,500 התקבל', timestamp: 'לפני 2 ימים', loanId: 'L001' },
-  { id: 'A02', description: 'התראת איחור נשלחה', timestamp: 'לפני 5 ימים', loanId: 'L002' },
-  { id: 'A03', description: 'הלוואה חדשה נוצרה', timestamp: 'לפני שבוע', loanId: 'L003' },
-  { id: 'A04', description: 'הלוואה סולקה במלואה', timestamp: 'לפני חודש', loanId: 'L004' },
-  { id: 'A05', description: 'תשלום בסך ₪550 התקבל', timestamp: 'לפני 10 ימים', loanId: 'L005' },
+  { id: 'A01', description: 'תשלום בסך ₪1,500 התקבל', timestamp: 'לפני 2 ימים', debtId: 'L001' },
+  { id: 'A02', description: 'התראת איחור נשלחה', timestamp: 'לפני 5 ימים', debtId: 'L002' },
+  { id: 'A03', description: 'חוב חדש נוצר', timestamp: 'לפני שבוע', debtId: 'L003' },
+  { id: 'A04', description: 'החוב סולק במלואו', timestamp: 'לפני חודש', debtId: 'L004' },
+  { id: 'A05', description: 'תשלום בסך ₪550 התקבל', timestamp: 'לפני 10 ימים', debtId: 'L005' },
 ];

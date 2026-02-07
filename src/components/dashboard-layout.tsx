@@ -44,9 +44,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'ניהול הלוואות', side: 'right'}} onClick={handleFeatureNotImplemented}>
+              <SidebarMenuButton tooltip={{children: 'ניהול חובות', side: 'right'}} onClick={handleFeatureNotImplemented}>
                 <Landmark />
-                <span>ניהול הלוואות</span>
+                <span>ניהול חובות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

@@ -33,29 +33,43 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DashboardLayout } from '@/components/dashboard-layout';
-import { LoanForm } from '@/components/loan-form';
-import { loans, activities } from '@/lib/data';
+import { DebtForm } from '@/components/loan-form';
+import { debts as initialDebts, activities, Debt } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
-  active: { text: 'פעילה', variant: 'default' },
-  paid: { text: 'שולמה', variant: 'secondary' },
+  active: { text: 'פעיל', variant: 'default' },
+  paid: { text: 'שולם', variant: 'secondary' },
   late: { text: 'בפיגור', variant: 'destructive' },
 };
 
 export default function Dashboard() {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [editingDebt, setEditingDebt] = React.useState<Debt | null>(null);
+  const [deletingDebt, setDeletingDebt] = React.useState<Debt | null>(null);
+  const [debts, setDebts] = React.useState(initialDebts);
   const { toast } = useToast();
 
-  const handleFeatureNotImplemented = () => {
-    toast({
-      title: 'עדיין בפיתוח',
-      description: 'האפשרות הזו תהיה זמינה בקרוב.',
-      variant: 'default',
-    });
+  const handleFormFinished = () => {
+    // In a real app, you'd refetch data here.
+    // For this demo, we'll just close the form.
+    setIsFormOpen(false);
+    setEditingDebt(null);
   };
+  
+  const handleDeleteDebt = () => {
+    if (!deletingDebt) return;
+    setDebts(currentDebts => currentDebts.filter(d => d.id !== deletingDebt.id));
+    const borrowerName = deletingDebt.borrower.name;
+    setDeletingDebt(null);
+    toast({
+      title: 'החוב נמחק',
+      description: `החוב של ${borrowerName} נמחק בהצלחה.`,
+    });
+  }
 
   const getAvatarUrl = (avatarId: string) => {
     const image = PlaceHolderImages.find(img => img.id === avatarId);
@@ -67,9 +81,9 @@ export default function Dashboard() {
     return image ? image.imageHint : 'person face';
   }
 
-  const totalDebt = loans.filter(l => l.status !== 'paid').reduce((acc, loan) => acc + loan.amount, 0);
-  const monthlyRepayment = loans.filter(l => l.status === 'active').reduce((acc, loan) => acc + loan.nextPaymentAmount, 0);
-  const lateLoans = loans.filter(l => l.status === 'late').length;
+  const totalDebt = debts.filter(l => l.status !== 'paid').reduce((acc, debt) => acc + debt.amount, 0);
+  const monthlyRepayment = debts.filter(l => l.status === 'active').reduce((acc, debt) => acc + debt.nextPaymentAmount, 0);
+  const lateDebts = debts.filter(l => l.status === 'late').length;
 
   return (
     <DashboardLayout>
@@ -77,27 +91,27 @@ export default function Dashboard() {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-3xl font-bold tracking-tight">
-              סקירת הלוואות
+              סקירת חובות
             </h1>
             <p className="text-muted-foreground">
-              ברוך הבא! כאן תוכל לנהל את כל ההלוואות שלך במקום אחד.
+              ברוך הבא! כאן תוכל לנהל את כל החובות שלך במקום אחד.
             </p>
           </div>
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => { setEditingDebt(null); setIsFormOpen(true); }}>
                 <PlusCircle className="ms-2 h-4 w-4" />
-                הוסף הלוואה חדשה
+                הוסף חוב חדש
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
               <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">רישום הלוואה חדשה</DialogTitle>
+                <DialogTitle className="font-headline text-2xl">{editingDebt ? 'עריכת חוב' : 'רישום חוב חדש'}</DialogTitle>
                 <DialogDescription>
-                  מלא את הפרטים הבאים כדי לרשום הלוואה חדשה במערכת.
+                  {editingDebt ? 'ערוך את פרטי החוב.' : 'מלא את הפרטים הבאים כדי לרשום חוב חדש במערכת.'}
                 </DialogDescription>
               </DialogHeader>
-              <LoanForm onFinished={() => setIsFormOpen(false)} />
+              <DebtForm onFinished={handleFormFinished} debt={editingDebt} />
             </DialogContent>
           </Dialog>
         </header>
@@ -125,23 +139,23 @@ export default function Dashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">הלוואות בפיגור</CardTitle>
+              <CardTitle className="text-sm font-medium">חובות בפיגור</CardTitle>
               <AlertCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">{lateLoans}</div>
+              <div className="font-headline text-2xl font-bold">{lateDebts}</div>
               <p className="text-xs text-muted-foreground">
-                {lateLoans > 0 ? 'יש לטפל בדחיפות' : 'כל ההלוואות משולמות בזמן'}
+                {lateDebts > 0 ? 'יש לטפל בדחיפות' : 'כל החובות משולמים בזמן'}
               </p>
             </CardContent>
           </Card>
            <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">הלוואות פעילות</CardTitle>
+              <CardTitle className="text-sm font-medium">חובות פעילים</CardTitle>
               <Hourglass className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">+{loans.filter(l => l.status === 'active').length}</div>
+              <div className="font-headline text-2xl font-bold">+{debts.filter(l => l.status === 'active').length}</div>
               <p className="text-xs text-muted-foreground">+1 מהחודש שעבר</p>
             </CardContent>
           </Card>
@@ -150,16 +164,16 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="lg:col-span-4">
             <CardHeader>
-              <CardTitle className="font-headline">רשימת הלוואות</CardTitle>
+              <CardTitle className="font-headline">רשימת חובות</CardTitle>
               <CardDescription>
-                סה"כ {loans.length} הלוואות רשומות במערכת.
+                סה"כ {debts.length} חובות רשומים במערכת.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>לווה</TableHead>
+                    <TableHead>חייב</TableHead>
                     <TableHead className="hidden sm:table-cell">סכום</TableHead>
                     <TableHead className="hidden sm:table-cell">ריבית</TableHead>
                     <TableHead className="hidden md:table-cell">תשלום הבא</TableHead>
@@ -170,23 +184,23 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loans.map((loan) => (
-                    <TableRow key={loan.id}>
+                  {debts.map((debt) => (
+                    <TableRow key={debt.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="hidden h-9 w-9 sm:flex">
-                              <AvatarImage src={getAvatarUrl(loan.borrower.avatar)} alt={loan.borrower.name} data-ai-hint={getAiHint(loan.borrower.avatar)}/>
-                              <AvatarFallback>{loan.borrower.name.charAt(0)}</AvatarFallback>
+                              <AvatarImage src={getAvatarUrl(debt.borrower.avatar)} alt={debt.borrower.name} data-ai-hint={getAiHint(debt.borrower.avatar)}/>
+                              <AvatarFallback>{debt.borrower.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <div className="font-medium">{loan.borrower.name}</div>
+                          <div className="font-medium">{debt.borrower.name}</div>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">₪{loan.amount.toLocaleString('he-IL')}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{loan.interestRate}%</TableCell>
-                      <TableCell className="hidden md:table-cell">{loan.nextPaymentDate}</TableCell>
+                      <TableCell className="hidden sm:table-cell">₪{debt.amount.toLocaleString('he-IL')}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{debt.interestRate}%</TableCell>
+                      <TableCell className="hidden md:table-cell">{debt.nextPaymentDate}</TableCell>
                       <TableCell>
-                        <Badge variant={statusMap[loan.status].variant}>
-                          {statusMap[loan.status].text}
+                        <Badge variant={statusMap[debt.status].variant}>
+                          {statusMap[debt.status].text}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -198,8 +212,8 @@ export default function Dashboard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleFeatureNotImplemented}>ערוך</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleFeatureNotImplemented}>מחק</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setEditingDebt(debt); setIsFormOpen(true); }}>ערוך</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeletingDebt(debt)}>מחק</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -221,11 +235,11 @@ export default function Dashboard() {
               {activities.map(activity => (
                 <div key={activity.id} className="flex items-center gap-4">
                   <Avatar className="hidden h-9 w-9 sm:flex">
-                    <AvatarImage src={getAvatarUrl(loans.find(l=>l.id===activity.loanId)!.borrower.avatar)} alt="Avatar" data-ai-hint={getAiHint(loans.find(l=>l.id===activity.loanId)!.borrower.avatar)}/>
-                    <AvatarFallback>{loans.find(l=>l.id===activity.loanId)!.borrower.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={getAvatarUrl(debts.find(l=>l.id===activity.debtId)!.borrower.avatar)} alt="Avatar" data-ai-hint={getAiHint(debts.find(l=>l.id===activity.debtId)!.borrower.avatar)}/>
+                    <AvatarFallback>{debts.find(l=>l.id===activity.debtId)!.borrower.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid gap-1">
-                    <p className="text-sm font-medium leading-none">{loans.find(l=>l.id===activity.loanId)!.borrower.name}</p>
+                    <p className="text-sm font-medium leading-none">{debts.find(l=>l.id===activity.debtId)!.borrower.name}</p>
                     <p className="text-sm text-muted-foreground">{activity.description}</p>
                   </div>
                   <div className="ms-auto text-sm text-muted-foreground">{activity.timestamp}</div>
@@ -235,6 +249,20 @@ export default function Dashboard() {
           </Card>
         </div>
       </main>
+      <AlertDialog open={!!deletingDebt} onOpenChange={(open) => !open && setDeletingDebt(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+            <AlertDialogDescription>
+              פעולה זו תמחק את החוב של {deletingDebt?.borrower.name} לצמיתות. לא ניתן לבטל פעולה זו.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDebt}>מחק</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

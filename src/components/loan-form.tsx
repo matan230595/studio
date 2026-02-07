@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,29 +27,51 @@ import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Debt } from "@/lib/data";
 
-const loanFormSchema = z.object({
-  borrowerName: z.string().min(2, { message: "שם הלווה חייב להכיל לפחות 2 תווים." }),
+const debtFormSchema = z.object({
+  borrowerName: z.string().min(2, { message: "שם החייב חייב להכיל לפחות 2 תווים." }),
   amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
   interestRate: z.coerce.number().min(0, { message: "הריבית לא יכולה להיות שלילית." }),
-  loanType: z.string({ required_error: "יש לבחור סוג הלוואה." }),
+  loanType: z.string({ required_error: "יש לבחור סוג חוב." }),
   paymentDate: z.date({ required_error: "יש לבחור תאריך." }),
 });
 
-export function LoanForm({ onFinished }: { onFinished: () => void }) {
+export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: Debt | null }) {
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof loanFormSchema>>({
-    resolver: zodResolver(loanFormSchema),
+  const form = useForm<z.infer<typeof debtFormSchema>>({
+    resolver: zodResolver(debtFormSchema),
     defaultValues: {
       borrowerName: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof loanFormSchema>) {
+  React.useEffect(() => {
+    if (debt) {
+      form.reset({
+        borrowerName: debt.borrower.name,
+        amount: debt.amount,
+        interestRate: debt.interestRate,
+        loanType: 'short-term', // This value is mocked as it's not in the Debt type
+        paymentDate: debt.nextPaymentDate !== '-' ? new Date(debt.nextPaymentDate) : new Date(),
+      });
+    } else {
+      form.reset({
+        borrowerName: "",
+        amount: undefined,
+        interestRate: undefined,
+        loanType: undefined,
+        paymentDate: undefined,
+      });
+    }
+  }, [debt, form]);
+
+
+  function onSubmit(values: z.infer<typeof debtFormSchema>) {
     console.log(values);
     toast({
       title: "הצלחה!",
-      description: "ההלוואה החדשה נוספה למערכת.",
+      description: debt ? "החוב עודכן במערכת." : "החוב החדש נוסף למערכת.",
     });
     onFinished();
   }
@@ -61,7 +84,7 @@ export function LoanForm({ onFinished }: { onFinished: () => void }) {
           name="borrowerName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>שם הלווה</FormLabel>
+              <FormLabel>שם החייב</FormLabel>
               <FormControl>
                 <Input placeholder="לדוגמה: ישראל ישראלי" {...field} />
               </FormControl>
@@ -75,7 +98,7 @@ export function LoanForm({ onFinished }: { onFinished: () => void }) {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>סכום ההלוואה (₪)</FormLabel>
+                  <FormLabel>סכום החוב (₪)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="50,000" {...field} />
                   </FormControl>
@@ -103,7 +126,7 @@ export function LoanForm({ onFinished }: { onFinished: () => void }) {
               name="loanType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>סוג הלוואה</FormLabel>
+                  <FormLabel>סוג חוב</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -113,8 +136,8 @@ export function LoanForm({ onFinished }: { onFinished: () => void }) {
                     <SelectContent>
                       <SelectItem value="short-term">טווח קצר</SelectItem>
                       <SelectItem value="long-term">טווח ארוך</SelectItem>
-                      <SelectItem value="linked">צמודת מדד</SelectItem>
-                      <SelectItem value="unlinked">לא צמודה</SelectItem>
+                      <SelectItem value="linked">צמוד מדד</SelectItem>
+                      <SelectItem value="unlinked">לא צמוד</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -162,7 +185,7 @@ export function LoanForm({ onFinished }: { onFinished: () => void }) {
         </div>
         <Button type="submit" className="w-full">
             <PlusCircle className="ms-2 h-4 w-4" />
-            הוסף הלוואה
+            {debt ? 'עדכן חוב' : 'הוסף חוב'}
         </Button>
       </form>
     </Form>

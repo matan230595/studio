@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'DebtWise',
-  description: 'מערכת לניהול חובות והלוואות',
+  description: 'מערכת לניהול חובות',
 };
 
 export default function RootLayout({
