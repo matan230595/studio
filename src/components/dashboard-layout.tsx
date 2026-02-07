@@ -14,7 +14,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut } from 'lucide-react';
+import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut, Sparkles } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -79,6 +79,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuButton isActive={pathname.startsWith('/reports')} tooltip={{children: 'דוחות', side: 'right'}}>
                   <FileText />
                   <span>דוחות</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/assistant">
+                <SidebarMenuButton isActive={pathname.startsWith('/assistant')} tooltip={{children: 'עוזר AI', side: 'right'}}>
+                  <Sparkles />
+                  <span>עוזר AI</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
