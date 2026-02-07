@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { MoreHorizontal, PlusCircle, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Landmark, Receipt } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,12 +27,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { DebtForm } from '@/components/loan-form';
 import { debts as initialDebts, Debt } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -67,8 +61,8 @@ export default function DebtsPage() {
     const creditorName = deletingDebt.creditor.name;
     setDeletingDebt(null);
     toast({
-      title: 'החוב נמחק',
-      description: `החוב ל${creditorName} נמחק בהצלחה.`,
+      title: 'הפריט נמחק',
+      description: `הרישום עבור ${creditorName} נמחק בהצלחה.`,
     });
   }
 
@@ -85,16 +79,17 @@ export default function DebtsPage() {
   const renderTable = () => (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">רשימת חובות</CardTitle>
+        <CardTitle className="font-headline">רשימת חובות והלוואות</CardTitle>
         <CardDescription>
-          סה"כ {debts.length} חובות רשומים במערכת.
+          סה"כ {debts.length} פריטים רשומים במערכת.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>נושה</TableHead>
+              <TableHead>נושה / מלווה</TableHead>
+              <TableHead>סוג</TableHead>
               <TableHead className="hidden sm:table-cell">סכום</TableHead>
               <TableHead className="hidden md:table-cell">החזר חודשי</TableHead>
               <TableHead className="hidden sm:table-cell">ריבית</TableHead>
@@ -117,11 +112,17 @@ export default function DebtsPage() {
                     <div className="font-medium">{debt.creditor.name}</div>
                   </div>
                 </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    {debt.type === 'loan' ? <Landmark className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
+                    <span>{debt.type === 'loan' ? 'הלוואה' : 'חוב'}</span>
+                  </div>
+                </TableCell>
                 <TableCell className="hidden sm:table-cell">₪{debt.amount.toLocaleString('he-IL')}</TableCell>
                 <TableCell className="hidden md:table-cell">
                   {debt.paymentType === 'installments' && debt.nextPaymentAmount ? `₪${debt.nextPaymentAmount.toLocaleString('he-IL')}` : '-'}
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">{debt.interestRate}%</TableCell>
+                <TableCell className="hidden sm:table-cell">{debt.interestRate !== undefined ? `${debt.interestRate}%` : '-'}</TableCell>
                 <TableCell className="hidden md:table-cell">{debt.dueDate}</TableCell>
                 <TableCell>
                   <Badge variant={statusMap[debt.status].variant}>
@@ -129,18 +130,16 @@ export default function DebtsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">פתח תפריט</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { setEditingDebt(debt); setIsFormOpen(true); }}>ערוך</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setDeletingDebt(debt)}>מחק</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    <div className="flex items-center gap-1">
+                        <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => { setEditingDebt(debt); setIsFormOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">ערוך</span>
+                        </Button>
+                        <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => setDeletingDebt(debt)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <span className="sr-only">מחק</span>
+                        </Button>
+                    </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -154,35 +153,34 @@ export default function DebtsPage() {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {debts.map(debt => (
         <Card key={debt.id} className="flex flex-col">
-          <CardHeader className="flex flex-row items-center gap-4">
+          <CardHeader className="flex flex-row items-start gap-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src={getAvatarUrl(debt.creditor.avatar)} alt={debt.creditor.name} data-ai-hint={getAiHint(debt.creditor.avatar)} />
               <AvatarFallback>{debt.creditor.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-grow">
               <CardTitle>{debt.creditor.name}</CardTitle>
               <CardDescription>
-                <Badge variant={statusMap[debt.status].variant} className="mt-1">
-                  {statusMap[debt.status].text}
-                </Badge>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    {debt.type === 'loan' ? <Landmark className="h-3 w-3" /> : <Receipt className="h-3 w-3" />}
+                    <span>{debt.type === 'loan' ? 'הלוואה' : 'חוב'}</span>
+                </div>
               </CardDescription>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button aria-haspopup="true" size="icon" variant="ghost" className="ms-auto">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">פתח תפריט</span>
+            <div className="flex items-center">
+                <Button size="icon" variant="ghost" onClick={() => { setEditingDebt(debt); setIsFormOpen(true); }}>
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">ערוך</span>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => { setEditingDebt(debt); setIsFormOpen(true); }}>ערוך</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDeletingDebt(debt)}>מחק</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Button size="icon" variant="ghost" onClick={() => setDeletingDebt(debt)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <span className="sr-only">מחק</span>
+                </Button>
+            </div>
           </CardHeader>
           <CardContent className="flex-grow space-y-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">סכום החוב</p>
+              <p className="text-sm font-medium text-muted-foreground">{debt.type === 'loan' ? 'סכום נותר' : 'סכום החוב'}</p>
               <p className="font-headline text-2xl font-bold">₪{debt.amount.toLocaleString('he-IL')}</p>
             </div>
              <div>
@@ -199,8 +197,13 @@ export default function DebtsPage() {
               <p className="text-sm">{debt.dueDate}</p>
             </div>
           </CardContent>
-          <CardFooter className="text-xs text-muted-foreground">
-            ריבית: {debt.interestRate}%
+          <CardFooter className="flex justify-between text-xs text-muted-foreground">
+            {debt.interestRate !== undefined && debt.interestRate > 0 ? (
+                <span>ריבית: {debt.interestRate}%</span>
+            ) : <span />}
+            <Badge variant={statusMap[debt.status].variant}>
+                {statusMap[debt.status].text}
+            </Badge>
           </CardFooter>
         </Card>
       ))}
@@ -212,10 +215,10 @@ export default function DebtsPage() {
       <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight">
-            ניהול חובות
+            ניהול חובות והלוואות
           </h1>
           <p className="text-muted-foreground">
-            מעקב וניהול כל החובות שלך במקום אחד.
+            מעקב וניהול כל ההתחייבויות שלך במקום אחד.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -231,14 +234,14 @@ export default function DebtsPage() {
             <DialogTrigger asChild>
                 <Button onClick={() => { setEditingDebt(null); setIsFormOpen(true); }}>
                 <PlusCircle className="ms-2 h-4 w-4" />
-                הוסף חוב חדש
+                הוספה
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
                 <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">{editingDebt ? 'עריכת חוב' : 'רישום חוב חדש'}</DialogTitle>
+                <DialogTitle className="font-headline text-2xl">{editingDebt ? `עריכת ${editingDebt.type === 'loan' ? 'הלוואה' : 'חוב'}` : 'רישום חוב או הלוואה'}</DialogTitle>
                 <DialogDescription>
-                    {editingDebt ? 'ערוך את פרטי החוב.' : 'מלא את הפרטים הבאים כדי לרשום חוב חדש במערכת.'}
+                    {editingDebt ? 'ערוך את פרטי הפריט.' : 'בחר את סוג הפריט ומלא את הפרטים כדי לרשום אותו במערכת.'}
                 </DialogDescription>
                 </DialogHeader>
                 <DebtForm onFinished={handleFormFinished} debt={editingDebt} />
@@ -254,7 +257,7 @@ export default function DebtsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
             <AlertDialogDescription>
-              פעולה זו תמחק את החוב ל{deletingDebt?.creditor.name} לצמיתות. לא ניתן לבטל פעולה זו.
+              פעולה זו תמחק את הרישום עבור {deletingDebt?.creditor.name} לצמיתות. לא ניתן לבטל פעולה זו.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,11 +1,12 @@
 export type Debt = {
   id: string;
+  type: 'debt' | 'loan';
   creditor: {
     name: string;
     avatar: string;
   };
   amount: number;
-  interestRate: number;
+  interestRate?: number;
   status: 'active' | 'paid' | 'late';
   dueDate: string;
   paymentType: 'single' | 'installments';
@@ -15,6 +16,7 @@ export type Debt = {
 export const debts: Debt[] = [
   {
     id: 'D001',
+    type: 'loan',
     creditor: { name: 'יעקב כהן (חבר)', avatar: 'avatar1' },
     amount: 5000,
     interestRate: 0,
@@ -25,24 +27,25 @@ export const debts: Debt[] = [
   },
   {
     id: 'D002',
+    type: 'debt',
     creditor: { name: 'בזק', avatar: 'bezeqLogo' },
     amount: 250,
-    interestRate: 0,
     status: 'late',
     dueDate: '2024-07-15',
     paymentType: 'single',
   },
   {
     id: 'D003',
+    type: 'debt',
     creditor: { name: 'שכירות דירה', avatar: 'landlord' },
     amount: 4500,
-    interestRate: 0,
     status: 'active',
     dueDate: '2024-08-05',
     paymentType: 'single',
   },
   {
     id: 'D004',
+    type: 'loan',
     creditor: { name: 'הלוואה - בנק לאומי', avatar: 'leumiLogo' },
     amount: 25000,
     interestRate: 4.5,
@@ -53,18 +56,18 @@ export const debts: Debt[] = [
   },
   {
     id: 'D005',
+    type: 'debt',
     creditor: { name: 'ועד בית', avatar: 'building' },
     amount: 150,
-    interestRate: 0,
     status: 'paid',
     dueDate: '2024-06-10',
     paymentType: 'single',
   },
   {
     id: 'D006',
+    type: 'debt',
     creditor: { name: 'לאה כהן', avatar: 'avatar2' },
     amount: 1200,
-    interestRate: 0,
     status: 'active',
     dueDate: '2024-08-20',
     paymentType: 'single',
