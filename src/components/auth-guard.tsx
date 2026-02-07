@@ -12,22 +12,25 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Don't run the effect until Firebase has determined the initial auth state.
     if (isUserLoading) {
-        return; // Do nothing while loading
+        return; 
     }
     
     const isLoginPage = pathname === '/login';
 
-    if (user && isLoginPage) {
-        // User is logged in but on the login page, redirect to home
-        router.push('/');
-    } else if (!user && !isLoginPage) {
-        // User is not logged in and not on the login page, redirect to login
+    // If the user is not logged in and they are trying to access a protected page,
+    // redirect them to the login page.
+    if (!user && !isLoginPage) {
         router.push('/login');
     }
 
+    // Redirecting a logged-in user away from the login page is now handled
+    // by the login page itself, simplifying the logic here and preventing race conditions.
+
   }, [user, isUserLoading, router, pathname]);
 
+  // While Firebase is initializing and checking the auth state, show a global loader.
   if (isUserLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -42,17 +45,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // If there is a user and they are on a protected page, render the dashboard layout.
   if (user && pathname !== '/login') {
     return <DashboardLayout>{children}</DashboardLayout>;
   }
 
+  // If there is no user and they are on the login page, render the login page.
   if (!user && pathname === '/login') {
       return <>{children}</>;
   }
   
-  // This covers two cases while waiting for useEffect to redirect:
-  // 1. user && pathname === '/login' -> show blank while redirecting to /
-  // 2. !user && pathname !== '/login' -> show blank while redirecting to /login
-  // The global loader `if (isUserLoading)` should handle most of the flicker.
+  // In other cases (like a logged-in user on the login page waiting for redirect),
+  // render nothing to avoid content flashes.
   return null;
 }
