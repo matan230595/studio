@@ -30,17 +30,10 @@ export default function LoginPage() {
       router.push('/');
     } catch (error: any) {
       console.error('Error signing in with Google', error);
-      if (error.code === 'auth/operation-not-allowed') {
-        setAuthError({
-          title: 'נדרשת פעולה בחשבון ה-Firebase שלך',
-          message: 'כדי לאפשר התחברות עם גוגל, עליך להפעיל את האפשרות ב-Firebase Console.'
-        });
-      } else {
-        setAuthError({
-            title: 'שגיאת התחברות',
-            message: 'אירעה שגיאה לא צפויה. אנא נסה שוב.'
-        });
-      }
+      setAuthError({
+          title: 'שגיאת התחברות',
+          message: 'אירעה שגיאה לא צפויה. אנא נסה שוב.'
+      });
     }
   };
 
@@ -80,22 +73,6 @@ export default function LoginPage() {
                   <div className="flex-1">
                     <h4 className="font-bold">{authError.title}</h4>
                     <p className="mt-1">{authError.message}</p>
-                    {authError.title.includes('Firebase') && (
-                      <div className="mt-4 text-xs">
-                        <p className="font-bold">כיצד לפתור:</p>
-                        <ol className="list-decimal list-inside space-y-1 mt-1 text-foreground/80">
-                            <li>
-                              פתח את <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Firebase Console</a>.
-                            </li>
-                            <li>בחר את הפרויקט שלך: <strong>studio-2161621478-ffba6</strong>.</li>
-                            <li>בתפריט הצד, נווט אל <strong>Build &gt; Authentication</strong>.</li>
-                            <li>עבור ללשונית <strong>Sign-in method</strong>.</li>
-                            <li>מצא את <strong>Google</strong> ברשימת הספקים ולחץ עליה.</li>
-                            <li>הפעל את המתג (Enable) ושמור את השינויים.</li>
-                        </ol>
-                         <p className="mt-3 text-foreground/60">לאחר שתבצע את הפעולות האלה, חזור לכאן ונסה להתחבר שוב.</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
