@@ -38,7 +38,7 @@
     }
   },
   "auth": {
-    "providers": ["google.com", "password", "anonymous"]
+    "providers": ["google.com"]
   },
   "firestore": {
     "/users/{userId}": {

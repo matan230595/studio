@@ -1,12 +1,12 @@
 'use client';
 
 import { useAuth, useUser } from '@/firebase';
-import { signInAnonymously } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Fingerprint } from 'lucide-react';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FaGoogle } from 'react-icons/fa';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -19,13 +19,14 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleAnonymousSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     if (!auth) return;
+    const provider = new GoogleAuthProvider();
     try {
-      await signInAnonymously(auth);
+      await signInWithPopup(auth, provider);
       router.push('/');
     } catch (error) {
-      console.error('Error signing in anonymously', error);
+      console.error('Error signing in with Google', error);
     }
   };
 
@@ -51,11 +52,11 @@ export default function LoginPage() {
                 <h1 className="font-headline text-4xl font-bold">DebtWise</h1>
             </div>
             <p className="text-lg text-muted-foreground">
-                התחברות אנונימית תיצור עבורך סביבת עבודה זמנית. הנתונים יישמרו רק בדפדפן זה.
+                התחבר באמצעות חשבון הגוגל שלך כדי להתחיל לנהל את ההתחייבויות שלך.
             </p>
-            <Button onClick={handleAnonymousSignIn} className="w-full" size="lg">
-                <Fingerprint className="ms-2 h-5 w-5" />
-                התחבר באופן אנונימי
+            <Button onClick={handleGoogleSignIn} className="w-full" size="lg">
+                <FaGoogle className="ms-2 h-5 w-5" />
+                התחבר עם גוגל
             </Button>
         </div>
     </div>

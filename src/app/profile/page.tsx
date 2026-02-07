@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -41,36 +40,6 @@ export default function ProfilePage() {
         </div>
     );
   }
-
-  if (user.isAnonymous) {
-    return (
-      <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <header>
-          <h1 className="font-headline text-3xl font-bold tracking-tight">
-            פרופיל משתמש
-          </h1>
-          <p className="text-muted-foreground">
-            אתה מחובר כמשתמש אנונימי.
-          </p>
-        </header>
-        <Card>
-          <CardHeader>
-            <CardTitle>משתמש אנונימי</CardTitle>
-            <CardDescription>
-              במצב אנונימי, כל הנתונים נשמרים באופן זמני בדפדפן הנוכחי בלבד.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p>
-              כדי לשמור את הנתונים שלך לצמיתות, לגשת אליהם מכל מכשיר, ולשתף פעולה, תצטרך ליצור חשבון קבוע.
-            </p>
-            <Button disabled>שדרג לחשבון קבוע (בקרוב)</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
