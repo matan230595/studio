@@ -5,15 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Sparkles, User as UserIcon } from 'lucide-react';
+import { Send, Sparkles, User as UserIcon, Volume2 } from 'lucide-react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Transaction } from '@/lib/data';
 import { askAssistant } from '@/ai/flows/assistant-flow';
+import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateFinancialSummary, getLateTransactions, getUpcomingPayments } from '@/lib/financial-utils';
 
 type Message = {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
 };
@@ -21,6 +23,7 @@ type Message = {
 export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
+      id: 'init1',
       role: 'assistant',
       content: 'שלום! אני עוזר ה-AI של DebtWise. איך אני יכול לעזור לך היום עם ניהול ההתחייבויות שלך?',
     },
@@ -28,6 +31,9 @@ export default function AssistantPage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  const [audioSource, setAudioSource] = useState('');
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
 
   const { user } = useUser();
   const firestore = useFirestore();
@@ -49,10 +55,13 @@ export default function AssistantPage() {
     e.preventDefault();
     if (!input.trim() || isLoading || isLoadingTransactions) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: input, id: `user-${Date.now()}` };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setAudioSource('');
+    setSpeakingMessageId(null);
+
 
     try {
       if (!transactions) {
@@ -71,11 +80,21 @@ export default function AssistantPage() {
         upcomingPayments,
       });
 
-      const assistantMessage: Message = { role: 'assistant', content: response.response };
+      const assistantMessage: Message = { role: 'assistant', content: response.response, id: `assistant-${Date.now()}` };
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      try {
+        const audioResponse = await textToSpeech({ text: response.response });
+        setAudioSource(audioResponse.audioDataUri);
+        setSpeakingMessageId(assistantMessage.id);
+      } catch (audioError) {
+        console.error('Text-to-speech failed:', audioError);
+      }
+
     } catch (error) {
       console.error('Error calling AI assistant:', error);
       const errorMessage: Message = {
+        id: `error-${Date.now()}`,
         role: 'assistant',
         content: 'אני מתנצל, התרחשה שגיאה. אנא נסה שוב מאוחר יותר.',
       };
@@ -89,7 +108,7 @@ export default function AssistantPage() {
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 h-full max-h-[calc(100vh-2rem)]">
       <header>
         <h1 className="font-headline text-3xl font-bold tracking-tight">עוזר AI</h1>
-        <p className="text-muted-foreground">שאל שאלות וקבל תובנות על המצב הפיננסי שלך.</p>
+        <p className="text-muted-foreground">שאל שאלות וקבל תובנות על המצב הפיננסי שלך. העוזר גם יקריא לך את התשובות.</p>
       </header>
       <Card className="flex flex-1 flex-col">
         <CardContent className="flex-1 p-0">
@@ -108,13 +127,16 @@ export default function AssistantPage() {
                         </Avatar>
                     )}
                     <div
-                        className={`max-w-[75%] rounded-lg p-3 text-sm ${
+                        className={`flex items-end gap-2 max-w-[75%] rounded-lg p-3 text-sm ${
                         message.role === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted'
                         }`}
                     >
                         <p style={{whiteSpace: 'pre-wrap'}}>{message.content}</p>
+                        {message.role === 'assistant' && speakingMessageId === message.id && (
+                            <Volume2 className="h-4 w-4 text-muted-foreground animate-pulse" />
+                        )}
                     </div>
                      {message.role === 'user' && (
                         <Avatar className="h-9 w-9 border">
@@ -159,6 +181,15 @@ export default function AssistantPage() {
           </form>
         </CardFooter>
       </Card>
+      {audioSource && (
+        <audio
+          key={audioSource}
+          autoPlay
+          hidden
+          onEnded={() => setSpeakingMessageId(null)}
+          src={audioSource}
+        />
+      )}
     </div>
   );
 }
