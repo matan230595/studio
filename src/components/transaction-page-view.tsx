@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
-import { Transaction } from '@/lib/data';
+import type { Transaction } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -38,6 +38,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc } from 'firebase/firestore';
+import { Skeleton } from './ui/skeleton';
 
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
@@ -67,24 +71,38 @@ const spreadsheetSchema = z.object({
 type TransactionPageViewProps = {
     pageTitle: string;
     pageDescription: string;
-    initialTransactions: Transaction[];
     transactionType: 'debt' | 'loan';
     entityName: string; // e.g., 'חוב'
     entityNamePlural: string; // e.g., 'חובות'
 };
 
-export function TransactionPageView({ pageTitle, pageDescription, initialTransactions, transactionType, entityName, entityNamePlural }: TransactionPageViewProps) {
+export function TransactionPageView({ pageTitle, pageDescription, transactionType, entityName, entityNamePlural }: TransactionPageViewProps) {
   const [viewMode, setViewMode] = React.useState<'table' | 'cards' | 'spreadsheet'>('table');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = React.useState<Transaction | null>(null);
-  const [transactions, setTransactions] = React.useState(initialTransactions);
   const { toast } = useToast();
+  
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'transactions');
+  }, [user, firestore]);
+
+  const { data: allTransactions, isLoading } = useCollection<Transaction>(transactionsQuery);
+  
+  const transactions = React.useMemo(() => {
+    if (!allTransactions) return [];
+    return allTransactions.filter(t => t.type === transactionType);
+  }, [allTransactions, transactionType]);
+
 
     const form = useForm<z.infer<typeof spreadsheetSchema>>({
         resolver: zodResolver(spreadsheetSchema),
         defaultValues: {
-            transactions: initialTransactions
+            transactions: []
         },
     });
 
@@ -94,11 +112,23 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
     });
 
     React.useEffect(() => {
-        form.reset({ transactions });
+        if(transactions) {
+            form.reset({ transactions });
+        }
     }, [transactions, form]);
 
     const handleSpreadsheetSave = (data: z.infer<typeof spreadsheetSchema>) => {
-        setTransactions(data.transactions);
+        if (!user || !firestore) return;
+
+        data.transactions.forEach(updatedTx => {
+            const originalTx = transactions.find(t => t.id === updatedTx.id);
+            if (originalTx && JSON.stringify(originalTx) !== JSON.stringify(updatedTx)) {
+                const { id, ...dataToSave } = updatedTx;
+                const docRef = doc(firestore, 'users', user.uid, 'transactions', id);
+                updateDocumentNonBlocking(docRef, dataToSave);
+            }
+        });
+
         toast({
             title: "השינויים נשמרו",
             description: "הנתונים עודכנו בהצלחה.",
@@ -106,11 +136,17 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
     };
 
   const handleFormFinished = (newTransaction: Transaction) => {
+    if (!user || !firestore) return;
+    const { id, ...dataToSave } = newTransaction;
+    const transactionWithUser = { ...dataToSave, userId: user.uid };
+    
     if (editingTransaction) {
-        setTransactions(current => current.map(t => t.id === newTransaction.id ? newTransaction : t));
-         toast({ title: `ה${entityName} עודכן בהצלחה`, description: `הפרטים עבור ${newTransaction.creditor.name} עודכנו.` });
+        const docRef = doc(firestore, 'users', user.uid, 'transactions', editingTransaction.id);
+        updateDocumentNonBlocking(docRef, transactionWithUser);
+        toast({ title: `ה${entityName} עודכן בהצלחה`, description: `הפרטים עבור ${newTransaction.creditor.name} עודכנו.` });
     } else {
-        setTransactions(current => [...current, newTransaction]);
+        const collectionRef = collection(firestore, 'users', user.uid, 'transactions');
+        addDocumentNonBlocking(collectionRef, transactionWithUser);
         toast({ title: `${entityName} חדש נוסף`, description: `${entityName} חדש עבור ${newTransaction.creditor.name} נוסף למערכת.` });
     }
     setIsFormOpen(false);
@@ -118,8 +154,9 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
   };
   
   const handleDeleteTransaction = () => {
-    if (!deletingTransaction) return;
-    setTransactions(current => current.filter(t => t.id !== deletingTransaction.id));
+    if (!deletingTransaction || !user || !firestore) return;
+    const docRef = doc(firestore, 'users', user.uid, 'transactions', deletingTransaction.id);
+    deleteDocumentNonBlocking(docRef);
     const creditorName = deletingTransaction.creditor.name;
     setDeletingTransaction(null);
     toast({
@@ -153,7 +190,17 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
     });
   };
 
-  const renderTable = () => (
+  const renderEmptyState = () => (
+    <div className="text-center py-16">
+        <h3 className="text-xl font-semibold">אין עדיין {entityNamePlural}</h3>
+        <p className="text-muted-foreground mt-2">לחץ על 'הוספת {entityName}' כדי להתחיל.</p>
+    </div>
+  )
+
+  const renderTable = () => {
+    if (isLoading) return <Card><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+    if (transactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
+    return (
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">רשימת {entityNamePlural}</CardTitle>
@@ -217,9 +264,12 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
         </Table>
       </CardContent>
     </Card>
-  );
+  )};
 
-  const renderCards = () => (
+  const renderCards = () => {
+    if (isLoading) return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{[...Array(4)].map((_,i) => <Skeleton key={i} className="h-72 w-full"/>)}</div>
+    if (transactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
+    return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {transactions.map(transaction => (
         <Card key={transaction.id} className="flex flex-col">
@@ -278,9 +328,12 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
         </Card>
       ))}
     </div>
-  );
+  )};
 
-  const renderSpreadsheet = () => (
+  const renderSpreadsheet = () => {
+    if (isLoading) return <Card><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+    if (transactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
+    return (
         <form onSubmit={form.handleSubmit(handleSpreadsheetSave)}>
             <Card>
                 <CardHeader>
@@ -353,6 +406,7 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
             </Card>
         </form>
     );
+  }
   
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">

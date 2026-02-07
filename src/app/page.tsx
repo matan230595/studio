@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { DollarSign, Percent, Hourglass, AlertCircle, Banknote, Landmark } from 'lucide-react';
+import { DollarSign, Percent, Hourglass, AlertCircle } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -17,8 +17,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { transactions as initialTransactions } from '@/lib/data';
 import Link from 'next/link';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Transaction } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -27,19 +30,57 @@ const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondar
 };
 
 export default function Dashboard() {
-  const [transactions] = React.useState(initialTransactions);
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  const totalOwed = transactions.filter(l => l.status !== 'paid').reduce((acc, item) => acc + item.amount, 0);
-  const monthlyRepayment = transactions.filter(d => d.status === 'active' && d.paymentType === 'installments').reduce((acc, item) => acc + (item.nextPaymentAmount || 0), 0);
-  const lateItems = transactions.filter(l => l.status === 'late').length;
-  const activeItems = transactions.filter(l => l.status === 'active').length;
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'transactions');
+  }, [user, firestore]);
 
-  const lateTransactions = transactions.filter(t => t.status === 'late').sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
-  const upcomingTransactions = transactions
-    .filter(t => t.status === 'active' && new Date(t.dueDate) >= new Date())
+  const stats = React.useMemo(() => {
+    if (!transactions) return { totalOwed: 0, monthlyRepayment: 0, lateItems: 0, activeItems: 0 };
+    const totalOwed = transactions.filter(l => l.status !== 'paid').reduce((acc, item) => acc + item.amount, 0);
+    const monthlyRepayment = transactions.filter(d => d.status === 'active' && d.paymentType === 'installments').reduce((acc, item) => acc + (item.nextPaymentAmount || 0), 0);
+    const lateItems = transactions.filter(l => l.status === 'late').length;
+    const activeItems = transactions.filter(l => l.status === 'active').length;
+    return { totalOwed, monthlyRepayment, lateItems, activeItems };
+  }, [transactions]);
+
+  const lateTransactions = React.useMemo(() => 
+    transactions?.filter(t => t.status === 'late').sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) || [], 
+  [transactions]);
+
+  const upcomingTransactions = React.useMemo(() =>
+    transactions
+    ?.filter(t => t.status === 'active' && new Date(t.dueDate) >= new Date())
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 5);
+    .slice(0, 5) || [],
+  [transactions]);
+
+
+  if (isLoading) {
+    return (
+        <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <header>
+                <Skeleton className="h-9 w-64" />
+                <Skeleton className="h-5 w-80 mt-2" />
+            </header>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+            </div>
+             <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+                <Card><CardHeader><CardTitle>פריטים דחופים (באיחור)</CardTitle></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+                <Card><CardHeader><CardTitle>5 התשלומים הקרובים</CardTitle></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+             </div>
+        </div>
+    );
+  }
 
 
   return (
@@ -60,7 +101,7 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">₪{totalOwed.toLocaleString('he-IL')}</div>
+              <div className="font-headline text-2xl font-bold">₪{stats.totalOwed.toLocaleString('he-IL')}</div>
               <p className="text-xs text-muted-foreground">כולל חובות והלוואות פעילים.</p>
             </CardContent>
           </Card>
@@ -70,7 +111,7 @@ export default function Dashboard() {
               <Percent className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">₪{monthlyRepayment.toLocaleString('he-IL')}</div>
+              <div className="font-headline text-2xl font-bold">₪{stats.monthlyRepayment.toLocaleString('he-IL')}</div>
               <p className="text-xs text-muted-foreground">מתוך הלוואות בתשלומים.</p>
             </CardContent>
           </Card>
@@ -80,9 +121,9 @@ export default function Dashboard() {
               <AlertCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">{lateItems}</div>
+              <div className="font-headline text-2xl font-bold">{stats.lateItems}</div>
               <p className="text-xs text-muted-foreground">
-                {lateItems > 0 ? 'יש לטפל בדחיפות' : 'כל ההתחייבויות משולמות בזמן'}
+                {stats.lateItems > 0 ? 'יש לטפל בדחיפות' : 'כל ההתחייבויות משולמות בזמן'}
               </p>
             </CardContent>
           </Card>
@@ -92,7 +133,7 @@ export default function Dashboard() {
               <Hourglass className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">{activeItems}</div>
+              <div className="font-headline text-2xl font-bold">{stats.activeItems}</div>
               <p className="text-xs text-muted-foreground">מסך כלל ההתחייבויות.</p>
             </CardContent>
           </Card>
@@ -133,6 +174,7 @@ export default function Dashboard() {
                 ) : (
                 <div className="text-center text-sm text-muted-foreground py-8">
                     <p>אין פריטים בפיגור. כל הכבוד!</p>
+                    <p className='text-xs mt-2'>תוכלו להוסיף חובות והלוואות חדשים בעמודים הרלוונטיים.</p>
                 </div>
                 )}
             </CardContent>

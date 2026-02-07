@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { DashboardLayout } from '@/components/dashboard-layout';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { AuthGuard } from '@/components/auth-guard';
 
 export const metadata: Metadata = {
   title: 'DebtWise',
@@ -28,8 +29,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <DashboardLayout>{children}</DashboardLayout>
-        <Toaster />
+        <FirebaseClientProvider>
+          <AuthGuard>{children}</AuthGuard>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );

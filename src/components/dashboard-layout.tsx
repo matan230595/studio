@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -14,11 +14,30 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Landmark, FileText, Settings, Bell, Banknote } from 'lucide-react';
-import { getAiHint, getAvatarUrl } from '@/lib/utils';
+import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut } from 'lucide-react';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    if (!auth) return;
+    try {
+        await signOut(auth);
+        router.push('/login');
+    } catch(e) {
+        console.error("Error signing out: ", e);
+    }
+  };
+
+  if (!user) {
+    // This should ideally not be reached due to AuthGuard
+    return null;
+  }
 
   return (
     <SidebarProvider>
@@ -87,12 +106,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                <Link href="/profile">
                 <SidebarMenuButton isActive={pathname.startsWith('/profile')} tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={getAvatarUrl('user')} alt="User" data-ai-hint={getAiHint('user')} />
-                    <AvatarFallback>אא</AvatarFallback>
+                    <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? "User"} />
+                    <AvatarFallback>{user.displayName?.charAt(0).toUpperCase() ?? 'U'}</AvatarFallback>
                   </Avatar>
-                  <span>אביב אביבי</span>
+                  <span>{user.displayName}</span>
                 </SidebarMenuButton>
               </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleSignOut} tooltip={{children: 'התנתק', side: 'right'}}>
+                  <LogOut />
+                  <span>התנתק</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
