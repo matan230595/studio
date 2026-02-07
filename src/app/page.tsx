@@ -61,7 +61,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="font-headline text-2xl font-bold">₪{totalOwed.toLocaleString('he-IL')}</div>
-              <p className="text-xs text-muted-foreground">+2.5% מהחודש שעבר</p>
+              <p className="text-xs text-muted-foreground">כולל חובות והלוואות פעילים.</p>
             </CardContent>
           </Card>
           <Card>
@@ -71,7 +71,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="font-headline text-2xl font-bold">₪{monthlyRepayment.toLocaleString('he-IL')}</div>
-              <p className="text-xs text-muted-foreground">+1.2% מהחודש שעבר</p>
+              <p className="text-xs text-muted-foreground">מתוך הלוואות בתשלומים.</p>
             </CardContent>
           </Card>
           <Card>
@@ -92,8 +92,8 @@ export default function Dashboard() {
               <Hourglass className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="font-headline text-2xl font-bold">+{activeItems}</div>
-              <p className="text-xs text-muted-foreground">+1 מהחודש שעבר</p>
+              <div className="font-headline text-2xl font-bold">{activeItems}</div>
+              <p className="text-xs text-muted-foreground">מסך כלל ההתחייבויות.</p>
             </CardContent>
           </Card>
         </div>
