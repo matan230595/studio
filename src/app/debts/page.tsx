@@ -29,10 +29,10 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
 import { transactions as initialTransactions, Transaction } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { getAiHint, getAvatarUrl } from '@/lib/utils';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -50,18 +50,11 @@ export default function DebtsPage() {
 
   const handleFormFinished = (newTransaction: Transaction) => {
     if (editingDebt) {
-        setDebts(currentDebts => currentDebts.map(d => d.id === newTransaction.id ? newTransaction : d).filter(d => d.type === 'debt'));
+        setDebts(currentDebts => currentDebts.map(d => d.id === newTransaction.id ? newTransaction : d));
          toast({ title: "החוב עודכן בהצלחה." });
     } else {
-        if (newTransaction.type === 'debt') {
-            setDebts(currentDebts => [...currentDebts, newTransaction]);
-            toast({ title: "חוב חדש נוסף." });
-        } else {
-            toast({
-                title: "הלוואה נוצרה",
-                description: "היא תופיע בעמוד ניהול הלוואות.",
-              });
-        }
+        setDebts(currentDebts => [...currentDebts, newTransaction]);
+        toast({ title: "חוב חדש נוסף." });
     }
     setIsFormOpen(false);
     setEditingDebt(null);
@@ -75,17 +68,8 @@ export default function DebtsPage() {
     toast({
       title: 'הפריט נמחק',
       description: `הרישום עבור ${creditorName} נמחק בהצלחה.`,
+      variant: 'destructive'
     });
-  }
-
-  const getAvatarUrl = (avatarId: string) => {
-    const image = PlaceHolderImages.find(img => img.id === avatarId);
-    return image ? image.imageUrl : `https://picsum.photos/seed/${avatarId}/100/100`;
-  };
-
-  const getAiHint = (avatarId: string) => {
-    const image = PlaceHolderImages.find(img => img.id === avatarId);
-    return image ? image.imageHint : 'person face';
   }
 
   const renderTable = () => (
@@ -129,7 +113,7 @@ export default function DebtsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-end gap-1">
                         <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => { setEditingDebt(debt); setIsFormOpen(true); }}>
                             <Pencil className="h-4 w-4" />
                             <span className="sr-only">ערוך</span>
@@ -221,17 +205,17 @@ export default function DebtsPage() {
             <DialogTrigger asChild>
                 <Button onClick={() => { setEditingDebt(null); setIsFormOpen(true); }}>
                 <PlusCircle className="ms-2 h-4 w-4" />
-                הוספה
+                הוספת חוב
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
                 <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">{editingDebt ? `עריכת חוב` : 'רישום חוב או הלוואה'}</DialogTitle>
+                <DialogTitle className="font-headline text-2xl">{editingDebt ? 'עריכת חוב' : 'הוספת חוב חדש'}</DialogTitle>
                 <DialogDescription>
-                    {editingDebt ? 'ערוך את פרטי החוב.' : 'בחר את סוג הפריט ומלא את הפרטים כדי לרשום אותו במערכת.'}
+                    {editingDebt ? 'ערוך את פרטי החוב.' : 'מלא את הפרטים כדי להוסיף חוב חדש למערכת.'}
                 </DialogDescription>
                 </DialogHeader>
-                <TransactionForm onFinished={handleFormFinished} transaction={editingDebt} />
+                <TransactionForm onFinished={handleFormFinished} transaction={editingDebt} fixedType="debt" />
             </DialogContent>
             </Dialog>
         </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { transactions } from "@/lib/data";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
@@ -21,7 +21,7 @@ export default function ReportsPage() {
     const chartData = Object.entries(debtByCreditor).map(([name, total]) => ({
         name,
         total,
-    }));
+    })).sort((a, b) => b.total - a.total);
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -36,19 +36,30 @@ export default function ReportsPage() {
       <Card>
         <CardHeader>
           <CardTitle>חובות לפי נושה</CardTitle>
-          <CardDescription>ניתוח סך החובות הפתוחים לכל גורם.</CardDescription>
+          <CardDescription>ניתוח סך החובות הפתוחים לכל גורם, מהגבוה לנמוך.</CardDescription>
         </CardHeader>
         <CardContent>
-           <ChartContainer config={{}} className="h-[400px] w-full">
-             <BarChart data={chartData} layout="vertical" margin={{ right: 20, left: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 12}} />
-                <Tooltip 
-                    cursor={{fill: 'hsl(var(--muted))'}} 
-                    content={<ChartTooltipContent />}
+           <ChartContainer config={{
+                total: {
+                  label: "סך חוב",
+                  color: "hsl(var(--primary))",
+                },
+              }} className="h-[400px] w-full">
+             <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis 
+                    dataKey="name" 
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(value) => value.slice(0, 15)}
                 />
-                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="סך חוב" />
+                <YAxis />
+                <Tooltip 
+                    cursor={false} 
+                    content={<ChartTooltipContent indicator="dot" />}
+                />
+                <Bar dataKey="total" fill="var(--color-total)" radius={8} />
              </BarChart>
            </ChartContainer>
         </CardContent>

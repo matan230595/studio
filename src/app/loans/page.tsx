@@ -29,10 +29,10 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
 import { transactions as initialTransactions, Transaction } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { getAiHint, getAvatarUrl } from '@/lib/utils';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -50,18 +50,11 @@ export default function LoansPage() {
 
   const handleFormFinished = (newTransaction: Transaction) => {
     if (editingLoan) {
-        setLoans(currentLoans => currentLoans.map(l => l.id === newTransaction.id ? newTransaction : l).filter(l => l.type === 'loan'));
+        setLoans(currentLoans => currentLoans.map(l => l.id === newTransaction.id ? newTransaction : l));
          toast({ title: "ההלוואה עודכנה בהצלחה." });
     } else {
-        if (newTransaction.type === 'loan') {
-            setLoans(currentLoans => [...currentLoans, newTransaction]);
-            toast({ title: "הלוואה חדשה נוספה." });
-        } else {
-            toast({
-                title: "חוב נוצר",
-                description: "הוא יופיע בעמוד ניהול חובות.",
-              });
-        }
+        setLoans(currentLoans => [...currentLoans, newTransaction]);
+        toast({ title: "הלוואה חדשה נוספה." });
     }
     setIsFormOpen(false);
     setEditingLoan(null);
@@ -75,17 +68,8 @@ export default function LoansPage() {
     toast({
       title: 'הפריט נמחק',
       description: `הרישום עבור ${creditorName} נמחק בהצלחה.`,
+      variant: 'destructive'
     });
-  }
-
-  const getAvatarUrl = (avatarId: string) => {
-    const image = PlaceHolderImages.find(img => img.id === avatarId);
-    return image ? image.imageUrl : `https://picsum.photos/seed/${avatarId}/100/100`;
-  };
-
-  const getAiHint = (avatarId: string) => {
-    const image = PlaceHolderImages.find(img => img.id === avatarId);
-    return image ? image.imageHint : 'person face';
   }
 
   const renderTable = () => (
@@ -135,7 +119,7 @@ export default function LoansPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-end gap-1">
                         <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => { setEditingLoan(loan); setIsFormOpen(true); }}>
                             <Pencil className="h-4 w-4" />
                             <span className="sr-only">ערוך</span>
@@ -239,17 +223,17 @@ export default function LoansPage() {
             <DialogTrigger asChild>
                 <Button onClick={() => { setEditingLoan(null); setIsFormOpen(true); }}>
                 <PlusCircle className="ms-2 h-4 w-4" />
-                הוספה
+                הוספת הלוואה
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
                 <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">{editingLoan ? `עריכת הלוואה` : 'רישום חוב או הלוואה'}</DialogTitle>
+                <DialogTitle className="font-headline text-2xl">{editingLoan ? 'עריכת הלוואה' : 'הוספת הלוואה חדשה'}</DialogTitle>
                 <DialogDescription>
-                    {editingLoan ? 'ערוך את פרטי ההלוואה.' : 'בחר את סוג הפריט ומלא את הפרטים כדי לרשום אותו במערכת.'}
+                    {editingLoan ? 'ערוך את פרטי ההלוואה.' : 'מלא את הפרטים כדי להוסיף הלוואה חדשה למערכת.'}
                 </DialogDescription>
                 </DialogHeader>
-                <TransactionForm onFinished={handleFormFinished} transaction={editingLoan} />
+                <TransactionForm onFinished={handleFormFinished} transaction={editingLoan} fixedType="loan"/>
             </DialogContent>
             </Dialog>
         </div>

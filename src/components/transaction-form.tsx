@@ -21,7 +21,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 import { Transaction } from "@/lib/data";
 
 const formSchema = z.discriminatedUnion("type", [
@@ -52,8 +51,7 @@ const formSchema = z.discriminatedUnion("type", [
 });
 
 
-export function TransactionForm({ onFinished, transaction }: { onFinished: (transaction: Transaction) => void, transaction?: Transaction | null }) {
-  const { toast } = useToast();
+export function TransactionForm({ onFinished, transaction, fixedType }: { onFinished: (transaction: Transaction) => void, transaction?: Transaction | null, fixedType?: 'debt' | 'loan' }) {
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,7 +68,7 @@ export function TransactionForm({ onFinished, transaction }: { onFinished: (tran
         })
       }
     ) : {
-      type: "debt",
+      type: fixedType || "debt",
       paymentType: 'single',
     },
   });
@@ -95,14 +93,16 @@ export function TransactionForm({ onFinished, transaction }: { onFinished: (tran
       form.reset(defaultValues);
     } else {
       form.reset({
-        type: "debt",
+        type: fixedType || 'debt',
         creditorName: "",
         amount: undefined,
         dueDate: undefined,
-        paymentType: 'single'
+        paymentType: fixedType === 'loan' ? undefined : 'single',
+        interestRate: undefined,
+        nextPaymentAmount: undefined,
       });
     }
-  }, [transaction, form]);
+  }, [transaction, fixedType, form]);
   
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newOrUpdatedTransaction: Transaction = {
@@ -128,50 +128,52 @@ export function TransactionForm({ onFinished, transaction }: { onFinished: (tran
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>סוג</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    const currentValues = form.getValues();
-                    form.reset({
-                        ...currentValues,
-                        type: value as 'debt' | 'loan',
-                        paymentType: value === 'debt' ? 'single' : currentValues.paymentType,
-                        interestRate: undefined,
-                        nextPaymentAmount: undefined,
-                    });
-                  }}
-                  defaultValue={field.value}
-                  className="flex space-x-4 space-x-reverse"
-                  disabled={!!transaction}
-                >
-                  <FormItem className="flex items-center space-x-2 space-x-reverse">
-                    <FormControl>
-                      <RadioGroupItem value="debt" id="debt" />
-                    </FormControl>
-                    <FormLabel htmlFor="debt" className="font-normal">חוב</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-x-reverse">
-                    <FormControl>
-                      <RadioGroupItem value="loan" id="loan" />
-                    </FormControl>
-                    <FormLabel htmlFor="loan" className="font-normal">הלוואה</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-               <FormDescription>
-                {type === 'debt' ? 'חוב עבור שירות, מוצר או חשבון.' : 'הלוואה היא כסף שלווית ותצטרך להחזיר, לעתים קרובות עם ריבית.'}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!fixedType && (
+            <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+                <FormItem className="space-y-3">
+                <FormLabel>סוג</FormLabel>
+                <FormControl>
+                    <RadioGroup
+                    onValueChange={(value) => {
+                        field.onChange(value);
+                        const currentValues = form.getValues();
+                        form.reset({
+                            ...currentValues,
+                            type: value as 'debt' | 'loan',
+                            paymentType: value === 'debt' ? 'single' : currentValues.paymentType,
+                            interestRate: undefined,
+                            nextPaymentAmount: undefined,
+                        });
+                    }}
+                    defaultValue={field.value}
+                    className="flex space-x-4 space-x-reverse"
+                    disabled={!!transaction}
+                    >
+                    <FormItem className="flex items-center space-x-2 space-x-reverse">
+                        <FormControl>
+                        <RadioGroupItem value="debt" id="debt" />
+                        </FormControl>
+                        <FormLabel htmlFor="debt" className="font-normal">חוב</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-x-reverse">
+                        <FormControl>
+                        <RadioGroupItem value="loan" id="loan" />
+                        </FormControl>
+                        <FormLabel htmlFor="loan" className="font-normal">הלוואה</FormLabel>
+                    </FormItem>
+                    </RadioGroup>
+                </FormControl>
+                <FormDescription>
+                    {type === 'debt' ? 'חוב עבור שירות, מוצר או חשבון.' : 'הלוואה היא כסף שלווית ותצטרך להחזיר, לעתים קרובות עם ריבית.'}
+                </FormDescription>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        )}
         
         <FormField
           control={form.control}
@@ -307,7 +309,7 @@ export function TransactionForm({ onFinished, transaction }: { onFinished: (tran
         </div>
         <Button type="submit" className="w-full">
             <PlusCircle className="ms-2 h-4 w-4" />
-            {transaction ? `עדכן ${transaction.type === 'loan' ? 'הלוואה' : 'חוב'}` : 'הוסף למערכת'}
+            {transaction ? `עדכן ${transaction.type === 'loan' ? 'הלוואה' : 'חוב'}` : `הוסף ${type === 'loan' ? 'הלוואה' : 'חוב'}`}
         </Button>
       </form>
     </Form>
