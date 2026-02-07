@@ -26,9 +26,20 @@ const TransactionSchema = z.object({
   userId: z.string().optional(),
 });
 
+const FinancialSummarySchema = z.object({
+  totalOwed: z.number(),
+  monthlyRepayment: z.number(),
+  lateItems: z.number(),
+  activeItems: z.number(),
+}).describe("A summary of the user's key financial metrics.");
+
+
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user\'s question about their financial situation.'),
-  transactions: z.array(TransactionSchema).describe('A list of the user\'s current financial transactions (debts and loans).'),
+  summary: FinancialSummarySchema,
+  lateTransactions: z.array(TransactionSchema).describe("A list of transactions that are past their due date."),
+  upcomingPayments: z.array(TransactionSchema).describe("A list of the next 5 upcoming payments."),
+  transactions: z.array(TransactionSchema).describe('The complete list of the user\'s current financial transactions (debts and loans).'),
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
@@ -45,24 +56,33 @@ const prompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantInputSchema },
   output: { schema: AssistantOutputSchema },
-  prompt: `אתה עוזר פיננסי אישי בשם DebtWise. המטרה שלך היא לענות על שאלות של משתמשים לגבי המצב הפיננסי שלהם, בהתבסס על רשימת ההתחייבויות (חובות והלוואות) המסופקת לך בפורמט JSON.
+  prompt: `אתה "DebtWise", עוזר פיננסי מומחה. תפקידך הוא לספק תשובות ותובנות חכמות על בסיס הנתונים הפיננסיים של המשתמש.
 
-התשובות שלך חייבות להיות:
-- בעברית.
-- ברורות, תמציתיות וידידותיות.
-- מבוססות אך ורק על הנתונים שקיבלת. אל תמציא מידע.
-- אם השאלה לא קשורה לנתונים הפיננסיים, השב שאתה יכול לענות רק על שאלות שקשורות לניהול חובות והלוואות.
+תמיד תענה בעברית. תשובותיך צריכות להיות ברורות, ידידותיות ומבוססות על הנתונים בלבד.
 
-הנתונים שברשותך (transactions):
+לפניך סיכום של המצב הפיננסי:
 \`\`\`json
-{{{json transactions}}}
+{{{json summary}}}
 \`\`\`
 
-השאלה של המשתמש (query):
+פריטים דחופים (באיחור):
+\`\`\`json
+{{{json lateTransactions}}}
+\`\`\`
+
+תשלומים קרובים:
+\`\`\`json
+{{{json upcomingPayments}}}
+\`\`\`
+
+השתמש במידע המסוכם הזה כדי לענות על שאלת המשתמש. אם אתה צריך פרטים נוספים, אתה יכול לעיין ברשימת הטרנזקציות המלאה.
+
+השאלה של המשתמש:
 "{{{query}}}"
 
-שים לב לנתונים כמו: סכום (amount), סטטוס (status), תאריך יעד (dueDate), וסוג (type: debt/loan).
-עכשיו, ענה על שאלת המשתמש.
+במידה והשאלה לא קשורה לנתונים, השב שאתה יכול לענות רק על שאלות שקשורות לניהול חובות והלוואות.
+
+עכשיו, נתח את המידע וענה על השאלה בצורה הטובה ביותר.
 `,
 });
 

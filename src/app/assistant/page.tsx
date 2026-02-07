@@ -11,6 +11,7 @@ import { collection } from 'firebase/firestore';
 import type { Transaction } from '@/lib/data';
 import { askAssistant } from '@/ai/flows/assistant-flow';
 import { Skeleton } from '@/components/ui/skeleton';
+import { calculateFinancialSummary, getLateTransactions, getUpcomingPayments } from '@/lib/financial-utils';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -57,7 +58,19 @@ export default function AssistantPage() {
       if (!transactions) {
         throw new Error('No transactions data available');
       }
-      const response = await askAssistant({ query: input, transactions });
+      
+      const summary = calculateFinancialSummary(transactions);
+      const lateTransactions = getLateTransactions(transactions);
+      const upcomingPayments = getUpcomingPayments(transactions);
+
+      const response = await askAssistant({ 
+        query: input, 
+        transactions,
+        summary,
+        lateTransactions,
+        upcomingPayments,
+      });
+
       const assistantMessage: Message = { role: 'assistant', content: response.response };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
