@@ -14,32 +14,26 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [authError, setAuthError] = useState<{title: string, message: string} | null>(null);
-  const [isSigningIn, setIsSigningIn] = useState(true); // To handle redirect flow
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
+  // If the user is authenticated, redirect them to the dashboard.
   useEffect(() => {
-    // Redirect only when all auth processes are complete and a user exists.
-    if (!isUserLoading && user && !isSigningIn) {
+    if (!isUserLoading && user) {
       router.push('/');
     }
-  }, [user, isUserLoading, isSigningIn, router]);
+  }, [user, isUserLoading, router]);
 
-  // Handle the result of the redirect
+  // Handle the redirect result from Google Sign-In.
   useEffect(() => {
       if (!auth) {
-          setIsSigningIn(false);
-          return;
+        setIsProcessingRedirect(false);
+        return;
       };
       
       getRedirectResult(auth)
-        .then((result) => {
-            // If result is not null, a sign-in was successful.
-            // The onAuthStateChanged listener will handle the user state update and the
-            // other useEffect will trigger the redirect to the homepage.
-            // We just need to stop our loading indicator.
-        })
         .catch((error) => {
-          // Handle Errors here.
-          console.error('Error from redirect result', error);
+          // Handle specific errors or show a generic message.
+          console.error('Error from redirect result:', error);
            if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
                  setAuthError({
                     title: 'שגיאת התחברות',
@@ -47,19 +41,20 @@ export default function LoginPage() {
                 });
             }
         }).finally(() => {
-            setIsSigningIn(false);
+            // This marks the end of the sign-in attempt via redirect.
+            setIsProcessingRedirect(false);
         });
   }, [auth]);
 
   const handleGoogleSignIn = () => {
     if (!auth) return;
     setAuthError(null);
-    setIsSigningIn(true);
     const provider = new GoogleAuthProvider();
     signInWithRedirect(auth, provider);
   };
 
-  if (isUserLoading || isSigningIn) {
+  // Show a loading state while checking auth status or processing the redirect.
+  if (isUserLoading || isProcessingRedirect) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-4">
@@ -72,7 +67,14 @@ export default function LoginPage() {
         </div>
     );
   }
+  
+  // If user exists after loading, they will be redirected by the first useEffect.
+  // We render null here to prevent a brief flash of the login page.
+  if (user) {
+    return null;
+  }
 
+  // If no user and all loading is done, show the login page.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-8 text-center">
@@ -83,9 +85,9 @@ export default function LoginPage() {
             <p className="text-lg text-muted-foreground">
                 התחבר באמצעות חשבון הגוגל שלך כדי להתחיל לנהל את ההתחייבויות שלך.
             </p>
-            <Button onClick={handleGoogleSignIn} className="w-full" size="lg" disabled={isSigningIn}>
+            <Button onClick={handleGoogleSignIn} className="w-full" size="lg">
                 <FaGoogle className="ms-2 h-5 w-5" />
-                {isSigningIn ? 'מתחבר...' : 'התחבר עם גוגל'}
+                התחבר עם גוגל
             </Button>
             
             {authError && (
