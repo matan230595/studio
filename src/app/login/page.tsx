@@ -29,6 +29,9 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
       router.push('/');
     } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        return;
+      }
       console.error('Error signing in with Google', error);
       setAuthError({
           title: 'שגיאת התחברות',
