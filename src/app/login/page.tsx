@@ -1,80 +1,65 @@
 'use client';
 
-import { useAuth, useUser } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { FaGoogle } from 'react-icons/fa';
 import { AlertTriangle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LoginPage() {
   const auth = useAuth();
-  const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const [authError, setAuthError] = useState<{title: string, message: string} | null>(null);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  const [error, setError] = useState<{title: string, message: string} | null>(null);
+  const [isAuthProcessing, setIsAuthProcessing] = useState(true);
 
-  // If the user is authenticated, redirect them to the dashboard.
   useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/');
-    }
-  }, [user, isUserLoading, router]);
-
-  // Handle the redirect result from Google Sign-In.
-  useEffect(() => {
-      if (!auth) {
-        setIsProcessingRedirect(false);
+    if (!auth) {
+        setIsAuthProcessing(false);
         return;
-      };
-      
-      getRedirectResult(auth)
-        .catch((error) => {
-          // Handle specific errors or show a generic message.
-          console.error('Error from redirect result:', error);
-           if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
-                 setAuthError({
-                    title: 'שגיאת התחברות',
-                    message: 'אירעה שגיאה במהלך ההתחברות. אנא נסה שוב.'
-                });
-            }
-        }).finally(() => {
-            // This marks the end of the sign-in attempt via redirect.
-            setIsProcessingRedirect(false);
-        });
+    };
+
+    getRedirectResult(auth)
+      .then((result) => {
+        // If result is not null, a sign-in was successful.
+        // AuthGuard will handle the redirection.
+      })
+      .catch((error) => {
+        console.error('Login Error:', error);
+        // Avoid showing error for user-cancelled flows
+        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+          setError({
+            title: 'שגיאת התחברות',
+            message: 'אירעה שגיאה במהלך ההתחברות. אנא נסה שוב.'
+          });
+        }
+      })
+      .finally(() => {
+        setIsAuthProcessing(false);
+      });
   }, [auth]);
 
   const handleGoogleSignIn = () => {
     if (!auth) return;
-    setAuthError(null);
+    setError(null);
     const provider = new GoogleAuthProvider();
     signInWithRedirect(auth, provider);
   };
 
-  // Show a loading state while checking auth status or processing the redirect.
-  if (isUserLoading || isProcessingRedirect) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                </div>
-            </div>
-        </div>
-    );
-  }
-  
-  // If user exists after loading, they will be redirected by the first useEffect.
-  // We render null here to prevent a brief flash of the login page.
-  if (user) {
-    return null;
+  // Although AuthGuard has a global loader, we might be on the login page
+  // while the redirect result is still being processed. This provides a more
+  // specific loading state for the login form itself.
+  if (isAuthProcessing) {
+      return (
+          <div className="flex h-screen w-full items-center justify-center bg-background">
+              <div className="flex flex-col items-center gap-4">
+                  <p className="text-muted-foreground">מעבד התחברות...</p>
+                  <Skeleton className="h-12 w-12 rounded-full" />
+              </div>
+          </div>
+      );
   }
 
-  // If no user and all loading is done, show the login page.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-8 text-center">
@@ -85,18 +70,18 @@ export default function LoginPage() {
             <p className="text-lg text-muted-foreground">
                 התחבר באמצעות חשבון הגוגל שלך כדי להתחיל לנהל את ההתחייבויות שלך.
             </p>
-            <Button onClick={handleGoogleSignIn} className="w-full" size="lg">
+            <Button onClick={handleGoogleSignIn} className="w-full" size="lg" disabled={isAuthProcessing}>
                 <FaGoogle className="ms-2 h-5 w-5" />
-                התחבר עם גוגל
+                {isAuthProcessing ? 'מעבד...' : 'התחבר עם גוגל'}
             </Button>
             
-            {authError && (
+            {error && (
               <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-start text-sm text-destructive">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                   <div className="flex-1">
-                    <h4 className="font-bold">{authError.title}</h4>
-                    <p className="mt-1">{authError.message}</p>
+                    <h4 className="font-bold">{error.title}</h4>
+                    <p className="mt-1">{error.message}</p>
                   </div>
                 </div>
               </div>

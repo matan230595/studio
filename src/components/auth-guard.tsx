@@ -12,9 +12,20 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isUserLoading && !user && pathname !== '/login') {
-      router.push('/login');
+    if (isUserLoading) {
+        return; // Do nothing while loading
     }
+    
+    const isLoginPage = pathname === '/login';
+
+    if (user && isLoginPage) {
+        // User is logged in but on the login page, redirect to home
+        router.push('/');
+    } else if (!user && !isLoginPage) {
+        // User is not logged in and not on the login page, redirect to login
+        router.push('/login');
+    }
+
   }, [user, isUserLoading, router, pathname]);
 
   if (isUserLoading) {
@@ -31,13 +42,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (pathname === '/login') {
-    return <>{children}</>;
-  }
-
-  if (user) {
+  if (user && pathname !== '/login') {
     return <DashboardLayout>{children}</DashboardLayout>;
   }
 
+  if (!user && pathname === '/login') {
+      return <>{children}</>;
+  }
+  
+  // This covers two cases while waiting for useEffect to redirect:
+  // 1. user && pathname === '/login' -> show blank while redirecting to /
+  // 2. !user && pathname !== '/login' -> show blank while redirecting to /login
+  // The global loader `if (isUserLoading)` should handle most of the flicker.
   return null;
 }
