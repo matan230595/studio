@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,12 +33,36 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getAiHint, getAvatarUrl, exportToCsv } from '@/lib/utils';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
   paid: { text: 'שולם', variant: 'secondary' },
   late: { text: 'בפיגור', variant: 'destructive' },
 };
+
+const spreadsheetSchema = z.object({
+  transactions: z.array(z.object({
+    id: z.string(),
+    type: z.enum(['debt', 'loan']),
+    creditor: z.object({
+      name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים."),
+      avatar: z.string(),
+    }),
+    amount: z.coerce.number().positive("הסכום חייב להיות חיובי."),
+    interestRate: z.coerce.number().min(0).optional().nullable(),
+    status: z.enum(['active', 'paid', 'late']),
+    dueDate: z.string().refine(val => !isNaN(Date.parse(val)) || /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "תאריך לא חוקי (YYYY-MM-DD)" }),
+    paymentType: z.enum(['single', 'installments']),
+    nextPaymentAmount: z.coerce.number().min(0).optional().nullable(),
+  })),
+});
+
 
 type TransactionPageViewProps = {
     pageTitle: string;
@@ -50,12 +74,36 @@ type TransactionPageViewProps = {
 };
 
 export function TransactionPageView({ pageTitle, pageDescription, initialTransactions, transactionType, entityName, entityNamePlural }: TransactionPageViewProps) {
-  const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('table');
+  const [viewMode, setViewMode] = React.useState<'table' | 'cards' | 'spreadsheet'>('table');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = React.useState<Transaction | null>(null);
   const [transactions, setTransactions] = React.useState(initialTransactions);
   const { toast } = useToast();
+
+    const form = useForm<z.infer<typeof spreadsheetSchema>>({
+        resolver: zodResolver(spreadsheetSchema),
+        defaultValues: {
+            transactions: initialTransactions
+        },
+    });
+
+    const { fields } = useFieldArray({
+        control: form.control,
+        name: "transactions"
+    });
+
+    React.useEffect(() => {
+        form.reset({ transactions });
+    }, [transactions, form]);
+
+    const handleSpreadsheetSave = (data: z.infer<typeof spreadsheetSchema>) => {
+        setTransactions(data.transactions);
+        toast({
+            title: "השינויים נשמרו",
+            description: "הנתונים עודכנו בהצלחה.",
+        });
+    };
 
   const handleFormFinished = (newTransaction: Transaction) => {
     if (editingTransaction) {
@@ -231,6 +279,80 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
       ))}
     </div>
   );
+
+  const renderSpreadsheet = () => (
+        <form onSubmit={form.handleSubmit(handleSpreadsheetSave)}>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">עריכה מהירה (דמוי Excel)</CardTitle>
+                    <CardDescription>
+                        ערוך את הנתונים ישירות בטבלה. לחץ על "שמור שינויים" בסיום.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="relative w-full overflow-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[200px]">{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
+                                    <TableHead>{transactionType === 'loan' ? 'סכום קרן' : 'סכום'}</TableHead>
+                                    {transactionType === 'loan' && <TableHead>החזר חודשי</TableHead>}
+                                    {transactionType === 'loan' && <TableHead>ריבית (%)</TableHead>}
+                                    <TableHead>תאריך יעד</TableHead>
+                                    <TableHead>סטטוס</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {fields.map((field, index) => (
+                                    <TableRow key={field.id}>
+                                        <TableCell className="font-medium p-1">
+                                            <Input {...form.register(`transactions.${index}.creditor.name`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
+                                            {form.formState.errors.transactions?.[index]?.creditor?.name && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.creditor?.name?.message}</p>}
+                                        </TableCell>
+                                        <TableCell className="p-1">
+                                            <Input type="number" {...form.register(`transactions.${index}.amount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
+                                            {form.formState.errors.transactions?.[index]?.amount && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.amount?.message}</p>}
+                                        </TableCell>
+                                        {transactionType === 'loan' && <TableCell className="p-1">
+                                            <Input type="number" {...form.register(`transactions.${index}.nextPaymentAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
+                                        </TableCell>}
+                                        {transactionType === 'loan' && <TableCell className="p-1">
+                                            <Input type="number" step="0.1" {...form.register(`transactions.${index}.interestRate`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
+                                        </TableCell>}
+                                        <TableCell className="p-1">
+                                            <Input type="date" {...form.register(`transactions.${index}.dueDate`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
+                                            {form.formState.errors.transactions?.[index]?.dueDate && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.dueDate?.message}</p>}
+                                        </TableCell>
+                                        <TableCell className="p-1">
+                                            <Controller
+                                                control={form.control}
+                                                name={`transactions.${index}.status`}
+                                                render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <SelectTrigger className="bg-transparent border-0 rounded-none h-auto p-2 focus:ring-1 focus:ring-ring">
+                                                            <SelectValue placeholder="בחר סטטוס" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {Object.entries(statusMap).map(([key, { text }]) => (
+                                                                <SelectItem key={key} value={key}>{text}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+                <CardFooter className="justify-end pt-6">
+                    <Button type="submit">שמור שינויים</Button>
+                </CardFooter>
+            </Card>
+        </form>
+    );
   
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -269,6 +391,9 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
               <Button variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('cards')} aria-label="תצוגת כרטיסים">
                 <LayoutGrid className="h-4 w-4" />
               </Button>
+              <Button variant={viewMode === 'spreadsheet' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('spreadsheet')} aria-label="תצוגת גיליון אלקטרוני">
+                <Sheet className="h-4 w-4" />
+              </Button>
             </div>
              <Button variant="outline" size="sm" onClick={handleExport}>
               <FileDown className="ms-2 h-4 w-4" />
@@ -277,7 +402,7 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
         </div>
       </header>
       
-      {viewMode === 'table' ? renderTable() : renderCards()}
+      {viewMode === 'table' ? renderTable() : (viewMode === 'cards' ? renderCards() : renderSpreadsheet())}
       
       <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
         <AlertDialogContent>
