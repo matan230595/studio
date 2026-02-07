@@ -26,11 +26,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { LoanForm } from '@/components/loan-form';
 import { loans, activities } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעילה', variant: 'default' },
@@ -40,6 +47,15 @@ const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondar
 
 export default function Dashboard() {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const { toast } = useToast();
+
+  const handleFeatureNotImplemented = () => {
+    toast({
+      title: 'עדיין בפיתוח',
+      description: 'האפשרות הזו תהיה זמינה בקרוב.',
+      variant: 'default',
+    });
+  };
 
   const getAvatarUrl = (avatarId: string) => {
     const image = PlaceHolderImages.find(img => img.id === avatarId);
@@ -174,10 +190,18 @@ export default function Dashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">פתח תפריט</span>
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">פתח תפריט</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleFeatureNotImplemented}>ערוך</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleFeatureNotImplemented}>מחק</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

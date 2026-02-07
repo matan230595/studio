@@ -13,11 +13,22 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Home, Landmark, FileText, Settings, Bell } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast();
+
+  const handleFeatureNotImplemented = () => {
+    toast({
+      title: 'עדיין בפיתוח',
+      description: 'האפשרות הזו תהיה זמינה בקרוב.',
+      variant: 'default',
+    });
+  };
+
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar side="right">
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-8 w-8 text-primary-foreground"><rect width="256" height="256" fill="none"/><path fill="currentColor" d="M208,56V200a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V56A16,16,0,0,1,64,40H192A16,16,0,0,1,208,56ZM96,168a8,8,0,0,0,8,8h48a8,8,0,0,0,0-16H104A8,8,0,0,0,96,168Zm8-40a8,8,0,0,0,0,16h48a8,8,0,0,0,0-16Z"/></svg>
@@ -27,25 +38,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive tooltip={{children: 'לוח מחוונים', side: 'left'}}>
+              <SidebarMenuButton isActive tooltip={{children: 'לוח מחוונים', side: 'right'}}>
                 <Home />
                 <span>לוח מחוונים</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'ניהול הלוואות', side: 'left'}}>
+              <SidebarMenuButton tooltip={{children: 'ניהול הלוואות', side: 'right'}} onClick={handleFeatureNotImplemented}>
                 <Landmark />
                 <span>ניהול הלוואות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'דוחות', side: 'left'}}>
+              <SidebarMenuButton tooltip={{children: 'דוחות', side: 'right'}} onClick={handleFeatureNotImplemented}>
                 <FileText />
                 <span>דוחות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'התראות', side: 'left'}}>
+              <SidebarMenuButton tooltip={{children: 'התראות', side: 'right'}} onClick={handleFeatureNotImplemented}>
                 <Bell />
                 <span>התראות</span>
               </SidebarMenuButton>
@@ -55,13 +66,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'הגדרות', side: 'left'}}>
+              <SidebarMenuButton tooltip={{children: 'הגדרות', side: 'right'}} onClick={handleFeatureNotImplemented}>
                 <Settings />
                 <span>הגדרות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-               <SidebarMenuButton tooltip={{children: 'פרופיל משתמש', side: 'left'}}>
+               <SidebarMenuButton tooltip={{children: 'פרופיל משתמש', side: 'right'}} onClick={handleFeatureNotImplemented}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
                   <AvatarFallback>אא</AvatarFallback>
