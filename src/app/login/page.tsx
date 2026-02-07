@@ -58,7 +58,7 @@ export default function LoginPage() {
     signInWithRedirect(auth, provider);
   };
 
-  if (isUserLoading || user || isSigningIn) {
+  if (isUserLoading || isSigningIn) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-4">
