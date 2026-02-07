@@ -14,7 +14,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Landmark, FileText, Settings, Bell } from 'lucide-react';
+import { Home, Landmark, FileText, Settings, Bell, Banknote } from 'lucide-react';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -41,8 +41,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenuItem>
                <Link href="/debts">
                 <SidebarMenuButton isActive={pathname.startsWith('/debts')} tooltip={{children: 'ניהול חובות', side: 'right'}}>
-                  <Landmark />
+                  <Banknote />
                   <span>ניהול חובות</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+               <Link href="/loans">
+                <SidebarMenuButton isActive={pathname.startsWith('/loans')} tooltip={{children: 'ניהול הלוואות', side: 'right'}}>
+                  <Landmark />
+                  <span>ניהול הלוואות</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>

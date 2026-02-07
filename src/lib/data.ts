@@ -1,4 +1,4 @@
-export type Debt = {
+export type Transaction = {
   id: string;
   type: 'debt' | 'loan';
   creditor: {
@@ -13,9 +13,9 @@ export type Debt = {
   nextPaymentAmount?: number;
 };
 
-export const debts: Debt[] = [
+export const transactions: Transaction[] = [
   {
-    id: 'D001',
+    id: 'L001',
     type: 'loan',
     creditor: { name: 'יעקב כהן (חבר)', avatar: 'avatar1' },
     amount: 5000,
@@ -26,7 +26,7 @@ export const debts: Debt[] = [
     nextPaymentAmount: 500,
   },
   {
-    id: 'D002',
+    id: 'D001',
     type: 'debt',
     creditor: { name: 'בזק', avatar: 'bezeqLogo' },
     amount: 250,
@@ -35,7 +35,7 @@ export const debts: Debt[] = [
     paymentType: 'single',
   },
   {
-    id: 'D003',
+    id: 'D002',
     type: 'debt',
     creditor: { name: 'שכירות דירה', avatar: 'landlord' },
     amount: 4500,
@@ -44,7 +44,7 @@ export const debts: Debt[] = [
     paymentType: 'single',
   },
   {
-    id: 'D004',
+    id: 'L002',
     type: 'loan',
     creditor: { name: 'הלוואה - בנק לאומי', avatar: 'leumiLogo' },
     amount: 25000,
@@ -55,7 +55,7 @@ export const debts: Debt[] = [
     nextPaymentAmount: 1200,
   },
   {
-    id: 'D005',
+    id: 'D003',
     type: 'debt',
     creditor: { name: 'ועד בית', avatar: 'building' },
     amount: 150,
@@ -64,7 +64,7 @@ export const debts: Debt[] = [
     paymentType: 'single',
   },
   {
-    id: 'D006',
+    id: 'D004',
     type: 'debt',
     creditor: { name: 'לאה כהן', avatar: 'avatar2' },
     amount: 1200,
@@ -82,9 +82,9 @@ export type Activity = {
 };
 
 export const activities: Activity[] = [
-  { id: 'A01', description: 'תשלום בסך ₪500 שולם', timestamp: 'לפני 2 ימים', debtId: 'D001' },
-  { id: 'A02', description: 'התראת איחור נשלחה', timestamp: 'לפני 5 ימים', debtId: 'D002' },
-  { id: 'A03', description: 'חוב חדש נוצר', timestamp: 'לפני שבוע', debtId: 'D003' },
-  { id: 'A04', description: 'החוב סולק במלואו', timestamp: 'לפני חודש', debtId: 'D005' },
-  { id: 'A05', description: 'תשלום בסך ₪1200 שולם', timestamp: 'לפני 10 ימים', debtId: 'D004' },
+  { id: 'A01', description: 'תשלום בסך ₪500 שולם', timestamp: 'לפני 2 ימים', debtId: 'L001' },
+  { id: 'A02', description: 'התראת איחור נשלחה', timestamp: 'לפני 5 ימים', debtId: 'D001' },
+  { id: 'A03', description: 'חוב חדש נוצר', timestamp: 'לפני שבוע', debtId: 'D002' },
+  { id: 'A04', description: 'החוב סולק במלואו', timestamp: 'לפני חודש', debtId: 'D003' },
+  { id: 'A05', description: 'תשלום בסך ₪1200 שולם', timestamp: 'לפני 10 ימים', debtId: 'L002' },
 ];

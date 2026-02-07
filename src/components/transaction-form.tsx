@@ -22,7 +22,7 @@ import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { Debt } from "@/lib/data";
+import { Transaction } from "@/lib/data";
 
 const formSchema = z.discriminatedUnion("type", [
   z.object({
@@ -30,6 +30,7 @@ const formSchema = z.discriminatedUnion("type", [
     creditorName: z.string().min(2, { message: "שם הנושה חייב להכיל לפחות 2 תווים." }),
     amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
     dueDate: z.date({ required_error: "יש לבחור תאריך יעד." }),
+    paymentType: z.enum(['single', 'installments']), // Not used for debt, but needed for schema
   }),
   z.object({
     type: z.literal("loan"),
@@ -51,25 +52,26 @@ const formSchema = z.discriminatedUnion("type", [
 });
 
 
-export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: Debt | null }) {
+export function TransactionForm({ onFinished, transaction }: { onFinished: (transaction: Transaction) => void, transaction?: Transaction | null }) {
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: debt ? (
+    defaultValues: transaction ? (
       {
-        ...debt,
-        dueDate: new Date(debt.dueDate),
-        amount: debt.amount || undefined,
-        creditorName: debt.creditor.name || "",
-        ...(debt.type === 'loan' && {
-          paymentType: debt.paymentType,
-          interestRate: debt.interestRate ?? 0,
-          nextPaymentAmount: debt.nextPaymentAmount || undefined,
+        ...transaction,
+        dueDate: new Date(transaction.dueDate),
+        amount: transaction.amount || undefined,
+        creditorName: transaction.creditor.name || "",
+        ...(transaction.type === 'loan' && {
+          paymentType: transaction.paymentType,
+          interestRate: transaction.interestRate ?? 0,
+          nextPaymentAmount: transaction.nextPaymentAmount || undefined,
         })
       }
     ) : {
       type: "debt",
+      paymentType: 'single',
     },
   });
 
@@ -77,17 +79,17 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
   const paymentType = form.watch("paymentType");
 
   React.useEffect(() => {
-    if (debt) {
+    if (transaction) {
       const defaultValues = {
-        ...debt,
-        dueDate: new Date(debt.dueDate),
-        amount: debt.amount || undefined,
-        creditorName: debt.creditor.name || "",
-        ...(debt.type === 'loan' ? {
-          paymentType: debt.paymentType,
-          interestRate: debt.interestRate ?? 0,
-          nextPaymentAmount: debt.nextPaymentAmount || undefined,
-        } : {})
+        ...transaction,
+        dueDate: new Date(transaction.dueDate),
+        amount: transaction.amount || undefined,
+        creditorName: transaction.creditor.name || "",
+        ...(transaction.type === 'loan' ? {
+          paymentType: transaction.paymentType,
+          interestRate: transaction.interestRate ?? 0,
+          nextPaymentAmount: transaction.nextPaymentAmount || undefined,
+        } : { paymentType: transaction.paymentType || 'single'})
       };
       // @ts-ignore
       form.reset(defaultValues);
@@ -97,17 +99,29 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
         creditorName: "",
         amount: undefined,
         dueDate: undefined,
+        paymentType: 'single'
       });
     }
-  }, [debt, form]);
+  }, [transaction, form]);
   
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "הצלחה!",
-      description: debt ? "הפרטים עודכנו במערכת." : "הרישום החדש נוסף למערכת.",
-    });
-    onFinished();
+    const newOrUpdatedTransaction: Transaction = {
+      id: transaction?.id || `${values.type.charAt(0).toUpperCase()}${Date.now()}`,
+      status: transaction?.status || 'active',
+      creditor: {
+        name: values.creditorName,
+        avatar: transaction?.creditor.avatar || `avatar${Math.ceil(Math.random() * 4)}`
+      },
+      dueDate: format(values.dueDate, 'yyyy-MM-dd'),
+      type: values.type,
+      amount: values.amount,
+      paymentType: values.type === 'loan' ? values.paymentType : 'single',
+      ...(values.type === 'loan' && {
+        interestRate: values.interestRate,
+        nextPaymentAmount: values.nextPaymentAmount
+      })
+    };
+    onFinished(newOrUpdatedTransaction);
   }
 
   return (
@@ -128,14 +142,14 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
                     form.reset({
                         ...currentValues,
                         type: value as 'debt' | 'loan',
-                        // Clear fields that are not shared
+                        paymentType: value === 'debt' ? 'single' : currentValues.paymentType,
                         interestRate: undefined,
-                        paymentType: undefined,
                         nextPaymentAmount: undefined,
                     });
                   }}
                   defaultValue={field.value}
                   className="flex space-x-4 space-x-reverse"
+                  disabled={!!transaction}
                 >
                   <FormItem className="flex items-center space-x-2 space-x-reverse">
                     <FormControl>
@@ -293,7 +307,7 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
         </div>
         <Button type="submit" className="w-full">
             <PlusCircle className="ms-2 h-4 w-4" />
-            {debt ? `עדכן ${debt.type === 'loan' ? 'הלוואה' : 'חוב'}` : 'הוסף למערכת'}
+            {transaction ? `עדכן ${transaction.type === 'loan' ? 'הלוואה' : 'חוב'}` : 'הוסף למערכת'}
         </Button>
       </form>
     </Form>
