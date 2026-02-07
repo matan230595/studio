@@ -13,18 +13,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Home, Landmark, FileText, Settings, Bell } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { toast } = useToast();
-
-  const handleFeatureNotImplemented = () => {
-    toast({
-      title: 'עדיין בפיתוח',
-      description: 'האפשרות הזו תהיה זמינה בקרוב.',
-      variant: 'default',
-    });
-  };
 
   return (
     <SidebarProvider>
@@ -44,19 +34,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'ניהול חובות', side: 'right'}} onClick={handleFeatureNotImplemented}>
+              <SidebarMenuButton tooltip={{children: 'ניהול חובות', side: 'right'}}>
                 <Landmark />
                 <span>ניהול חובות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'דוחות', side: 'right'}} onClick={handleFeatureNotImplemented}>
+              <SidebarMenuButton tooltip={{children: 'דוחות', side: 'right'}}>
                 <FileText />
                 <span>דוחות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'התראות', side: 'right'}} onClick={handleFeatureNotImplemented}>
+              <SidebarMenuButton tooltip={{children: 'התראות', side: 'right'}}>
                 <Bell />
                 <span>התראות</span>
               </SidebarMenuButton>
@@ -66,13 +56,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'הגדרות', side: 'right'}} onClick={handleFeatureNotImplemented}>
+              <SidebarMenuButton tooltip={{children: 'הגדרות', side: 'right'}}>
                 <Settings />
                 <span>הגדרות</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-               <SidebarMenuButton tooltip={{children: 'פרופיל משתמש', side: 'right'}} onClick={handleFeatureNotImplemented}>
+               <SidebarMenuButton tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
                   <AvatarFallback>אא</AvatarFallback>
