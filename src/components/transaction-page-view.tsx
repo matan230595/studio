@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +32,7 @@ import { Transaction } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { getAiHint, getAvatarUrl } from '@/lib/utils';
+import { getAiHint, getAvatarUrl, exportToCsv } from '@/lib/utils';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -80,6 +80,30 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
       variant: 'destructive'
     });
   }
+
+  const handleExport = () => {
+    const dataToExport = transactions.map(t => {
+      const commonData: {[key: string]: any} = {
+        'שם': t.creditor.name,
+        'סכום': t.amount,
+        'תאריך יעד': t.dueDate,
+        'סטטוס': statusMap[t.status].text,
+      };
+      if (transactionType === 'loan') {
+        commonData['סוג תשלום'] = t.paymentType === 'single' ? 'חד פעמי' : 'תשלומים';
+        commonData['ריבית (%)'] = t.interestRate ?? 0;
+        commonData['החזר חודשי'] = t.nextPaymentAmount ?? '';
+      }
+      return commonData;
+    });
+    
+    const today = new Date().toISOString().slice(0, 10);
+    exportToCsv(`${entityNamePlural}_${today}.csv`, dataToExport);
+    toast({
+        title: "הייצוא התחיל",
+        description: `קובץ ה-${entityNamePlural} שלך יורד כעת.`,
+    });
+  };
 
   const renderTable = () => (
     <Card>
@@ -220,14 +244,6 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
           </p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="flex items-center rounded-md bg-muted p-1">
-              <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('table')} aria-label="תצוגת טבלה">
-                <List className="h-4 w-4" />
-              </Button>
-              <Button variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('cards')} aria-label="תצוגת כרטיסים">
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
                 <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }}>
@@ -245,6 +261,19 @@ export function TransactionPageView({ pageTitle, pageDescription, initialTransac
                 <TransactionForm onFinished={handleFormFinished} transaction={editingTransaction} fixedType={transactionType} />
             </DialogContent>
             </Dialog>
+
+            <div className="flex items-center rounded-md bg-muted p-1">
+              <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('table')} aria-label="תצוגת טבלה">
+                <List className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('cards')} aria-label="תצוגת כרטיסים">
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+             <Button variant="outline" size="sm" onClick={handleExport}>
+              <FileDown className="ms-2 h-4 w-4" />
+              ייצוא
+            </Button>
         </div>
       </header>
       

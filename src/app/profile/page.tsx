@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { getAiHint, getAvatarUrl } from '@/lib/utils';
 import { Pencil } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -35,7 +36,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                    <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
+                    <AvatarImage src={getAvatarUrl('user')} alt="User" data-ai-hint={getAiHint('user')} />
                     <AvatarFallback>אא</AvatarFallback>
                 </Avatar>
                 <Button variant="outline">שנה תמונה</Button>

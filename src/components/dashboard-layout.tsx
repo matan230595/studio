@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Home, Landmark, FileText, Settings, Bell, Banknote } from 'lucide-react';
+import { getAiHint, getAvatarUrl } from '@/lib/utils';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -86,7 +87,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                <Link href="/profile">
                 <SidebarMenuButton isActive={pathname.startsWith('/profile')} tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
+                    <AvatarImage src={getAvatarUrl('user')} alt="User" data-ai-hint={getAiHint('user')} />
                     <AvatarFallback>אא</AvatarFallback>
                   </Avatar>
                   <span>אביב אביבי</span>
