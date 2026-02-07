@@ -1,0 +1,406 @@
+{
+  "entities": {
+    "Loan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Loan",
+      "type": "object",
+      "description": "Represents a loan agreement.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Loan entity."
+        },
+        "loanType": {
+          "type": "string",
+          "description": "Type of loan (e.g., personal, mortgage)."
+        },
+        "principalAmount": {
+          "type": "number",
+          "description": "The initial amount of the loan."
+        },
+        "interestRate": {
+          "type": "number",
+          "description": "The annual interest rate for the loan."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The date the loan was issued.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The date the loan is expected to be fully repaid.",
+          "format": "date-time"
+        },
+        "termMonths": {
+          "type": "number",
+          "description": "The loan term in months."
+        },
+        "interestType": {
+          "type": "string",
+          "description": "Type of interest calculation (e.g., simple, compound)."
+        },
+        "isFixedRate": {
+          "type": "boolean",
+          "description": "Indicates if the interest rate is fixed or variable."
+        },
+        "paymentFrequency": {
+          "type": "string",
+          "description": "How often payments are made (e.g., monthly, bi-weekly)."
+        },
+        "collateralId": {
+          "type": "string",
+          "description": "Reference to Collateral. (Relationship: Loan 1:1 Collateral)"
+        },
+        "guarantorIds": {
+          "type": "array",
+          "description": "References to Guarantors. (Relationship: Loan 1:N Guarantor)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "loanAgreementId": {
+          "type": "string",
+          "description": "Reference to LoanAgreement. (Relationship: Loan 1:1 LoanAgreement)"
+        }
+      },
+      "required": [
+        "id",
+        "loanType",
+        "principalAmount",
+        "interestRate",
+        "startDate",
+        "endDate",
+        "termMonths",
+        "interestType",
+        "isFixedRate",
+        "paymentFrequency"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment made towards a loan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Payment entity."
+        },
+        "loanId": {
+          "type": "string",
+          "description": "Reference to Loan. (Relationship: Loan 1:N Payment)"
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "The date the payment was made.",
+          "format": "date-time"
+        },
+        "paymentAmount": {
+          "type": "number",
+          "description": "The amount of the payment."
+        },
+        "principalPaid": {
+          "type": "number",
+          "description": "The amount of the payment that went towards the principal."
+        },
+        "interestPaid": {
+          "type": "number",
+          "description": "The amount of the payment that went towards interest."
+        },
+        "remainingBalance": {
+          "type": "number",
+          "description": "The remaining balance on the loan after the payment."
+        }
+      },
+      "required": [
+        "id",
+        "loanId",
+        "paymentDate",
+        "paymentAmount",
+        "principalPaid",
+        "interestPaid",
+        "remainingBalance"
+      ]
+    },
+    "Collateral": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Collateral",
+      "type": "object",
+      "description": "Represents collateral associated with a loan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Collateral entity."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the collateral."
+        },
+        "estimatedValue": {
+          "type": "number",
+          "description": "Estimated market value of the collateral."
+        },
+        "documentIds": {
+          "type": "array",
+          "description": "References to Documents. (Relationship: Collateral 1:N Document)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "estimatedValue"
+      ]
+    },
+    "Guarantor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Guarantor",
+      "type": "object",
+      "description": "Represents a guarantor for a loan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Guarantor entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the guarantor."
+        },
+        "contactInfo": {
+          "type": "string",
+          "description": "Contact information for the guarantor."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "contactInfo"
+      ]
+    },
+    "LoanAgreement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LoanAgreement",
+      "type": "object",
+      "description": "Represents a loan agreement document.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LoanAgreement entity."
+        },
+        "agreementText": {
+          "type": "string",
+          "description": "The full text of the loan agreement."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "The date the loan agreement was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "agreementText",
+        "creationDate"
+      ]
+    },
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
+      "type": "object",
+      "description": "Represents a document related to a loan or collateral.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Document entity."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The name of the document file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "The type of the document file (e.g., PDF, JPG)."
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "The size of the document file in bytes."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "The date the document was uploaded.",
+          "format": "date-time"
+        },
+        "filePath": {
+          "type": "string",
+          "description": "The path to the document file."
+        }
+      },
+      "required": [
+        "id",
+        "fileName",
+        "fileType",
+        "fileSize",
+        "uploadDate",
+        "filePath"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/loans/{loanId}",
+        "definition": {
+          "entityName": "Loan",
+          "schema": {
+            "$ref": "#/backend/entities/Loan"
+          },
+          "description": "Stores loan information for a specific user. Path-based ownership ensures only the user can access this data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the loan."
+            },
+            {
+              "name": "loanId",
+              "description": "The ID of the loan document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/loans/{loanId}/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment information for a specific loan. Path-based ownership ensures only the user can access this data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the loan."
+            },
+            {
+              "name": "loanId",
+              "description": "The ID of the loan document."
+            },
+            {
+              "name": "paymentId",
+              "description": "The ID of the payment document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/loans/{loanId}/collateral/{collateralId}",
+        "definition": {
+          "entityName": "Collateral",
+          "schema": {
+            "$ref": "#/backend/entities/Collateral"
+          },
+          "description": "Stores collateral information for a specific loan. Path-based ownership ensures only the user can access this data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the loan."
+            },
+            {
+              "name": "loanId",
+              "description": "The ID of the loan document."
+            },
+            {
+              "name": "collateralId",
+              "description": "The ID of the collateral document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/loans/{loanId}/guarantors/{guarantorId}",
+        "definition": {
+          "entityName": "Guarantor",
+          "schema": {
+            "$ref": "#/backend/entities/Guarantor"
+          },
+          "description": "Stores guarantor information for a specific loan. Path-based ownership ensures only the user can access this data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the loan."
+            },
+            {
+              "name": "loanId",
+              "description": "The ID of the loan document."
+            },
+            {
+              "name": "guarantorId",
+              "description": "The ID of the guarantor document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/loans/{loanId}/loanAgreements/{loanAgreementId}",
+        "definition": {
+          "entityName": "LoanAgreement",
+          "schema": {
+            "$ref": "#/backend/entities/LoanAgreement"
+          },
+          "description": "Stores loan agreement information for a specific loan. Path-based ownership ensures only the user can access this data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the loan."
+            },
+            {
+              "name": "loanId",
+              "description": "The ID of the loan document."
+            },
+            {
+              "name": "loanAgreementId",
+              "description": "The ID of the loan agreement document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/loans/{loanId}/collateral/{collateralId}/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": {
+            "$ref": "#/backend/entities/Document"
+          },
+          "description": "Stores document information for a specific collateral. Path-based ownership ensures only the user can access this data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the loan."
+            },
+            {
+              "name": "loanId",
+              "description": "The ID of the loan document."
+            },
+            {
+              "name": "collateralId",
+              "description": "The ID of the collateral document."
+            },
+            {
+              "name": "documentId",
+              "description": "The ID of the document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to manage personal loans efficiently, securely, and with full support for Hebrew RTL layouts. The core principle is Authorization Independence, achieved through denormalization where needed, ensuring that security rules can be evaluated without complex `get()` calls. The structure also enforces Structural Segregation by keeping data with different access requirements in separate collections, thus simplifying security rules and supporting QAPs. Access Modeling follows a consistent pattern using path-based ownership for private user data and membership maps for collaborative access.\n\nLoans are stored under each user's document, ensuring that only the user can access them. Collateral, Guarantors, Loan Agreements, and Documents related to a Loan are stored as subcollections of the Loan document. Payments are stored as a subcollection of Loans. This approach provides clear ownership and simplifies security rules. No denormalization is needed since all access is based on path ownership.\n\nThis structure supports the application's core features like Loan Registration, Payment Tracking, Automated Notifications, Loan Agreement Generation, Automated Interest Calculation, Collateral Management, and Monthly Report Generation. The structure allows secure and efficient data retrieval and manipulation, aligning with the application's requirements."
+  }
+}
