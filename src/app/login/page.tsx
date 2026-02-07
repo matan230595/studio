@@ -17,10 +17,11 @@ export default function LoginPage() {
   const [isSigningIn, setIsSigningIn] = useState(true); // To handle redirect flow
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    // Redirect only when all auth processes are complete and a user exists.
+    if (!isUserLoading && user && !isSigningIn) {
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, isSigningIn, router]);
 
   // Handle the result of the redirect
   useEffect(() => {
