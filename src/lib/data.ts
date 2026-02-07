@@ -15,12 +15,3 @@ export type Transaction = {
 };
 
 export const transactions: Transaction[] = [];
-
-export type Activity = {
-  id: string;
-  description: string;
-  timestamp: string;
-  debtId: string;
-};
-
-export const activities: Activity[] = [];
