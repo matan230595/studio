@@ -107,9 +107,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuButton isActive={pathname.startsWith('/profile')} tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? "User"} />
-                    <AvatarFallback>{user.displayName?.charAt(0).toUpperCase() ?? 'U'}</AvatarFallback>
+                    <AvatarFallback>{user.isAnonymous ? 'A' : (user.displayName?.charAt(0).toUpperCase() ?? 'U')}</AvatarFallback>
                   </Avatar>
-                  <span>{user.displayName}</span>
+                  <span>{user.isAnonymous ? 'משתמש אנונימי' : user.displayName}</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
