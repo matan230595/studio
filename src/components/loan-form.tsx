@@ -30,10 +30,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Debt } from "@/lib/data";
 
 const debtFormSchema = z.object({
-  borrowerName: z.string().min(2, { message: "שם החייב חייב להכיל לפחות 2 תווים." }),
+  creditorName: z.string().min(2, { message: "שם הנושה חייב להכיל לפחות 2 תווים." }),
   amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
   interestRate: z.coerce.number().min(0, { message: "הריבית לא יכולה להיות שלילית." }),
-  loanType: z.string({ required_error: "יש לבחור סוג חוב." }),
+  debtType: z.string({ required_error: "יש לבחור סוג חוב." }),
   paymentDate: z.date({ required_error: "יש לבחור תאריך." }),
 });
 
@@ -42,25 +42,25 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
   const form = useForm<z.infer<typeof debtFormSchema>>({
     resolver: zodResolver(debtFormSchema),
     defaultValues: {
-      borrowerName: "",
+      creditorName: "",
     },
   });
 
   React.useEffect(() => {
     if (debt) {
       form.reset({
-        borrowerName: debt.borrower.name,
+        creditorName: debt.creditor.name,
         amount: debt.amount,
         interestRate: debt.interestRate,
-        loanType: 'short-term', // This value is mocked as it's not in the Debt type
+        debtType: 'personal', // This value is mocked as it's not in the Debt type
         paymentDate: debt.nextPaymentDate !== '-' ? new Date(debt.nextPaymentDate) : new Date(),
       });
     } else {
       form.reset({
-        borrowerName: "",
+        creditorName: "",
         amount: undefined,
         interestRate: undefined,
-        loanType: undefined,
+        debtType: undefined,
         paymentDate: undefined,
       });
     }
@@ -81,12 +81,12 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="borrowerName"
+          name="creditorName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>שם החייב</FormLabel>
+              <FormLabel>שם הנושה</FormLabel>
               <FormControl>
-                <Input placeholder="לדוגמה: ישראל ישראלי" {...field} />
+                <Input placeholder="לדוגמה: בזק, יעקב כהן" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,7 +100,7 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
                 <FormItem>
                   <FormLabel>סכום החוב (₪)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="50,000" {...field} />
+                    <Input type="number" placeholder="5,000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,7 +113,7 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
                 <FormItem>
                   <FormLabel>ריבית שנתית (%)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.1" placeholder="3.5" {...field} />
+                    <Input type="number" step="0.1" placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -123,7 +123,7 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
-              name="loanType"
+              name="debtType"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>סוג חוב</FormLabel>
@@ -134,10 +134,10 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="short-term">טווח קצר</SelectItem>
-                      <SelectItem value="long-term">טווח ארוך</SelectItem>
-                      <SelectItem value="linked">צמוד מדד</SelectItem>
-                      <SelectItem value="unlinked">לא צמוד</SelectItem>
+                      <SelectItem value="personal">אישי</SelectItem>
+                      <SelectItem value="supplier">ספק</SelectItem>
+                      <SelectItem value="loan">הלוואה</SelectItem>
+                      <SelectItem value="rent">שכירות</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -149,7 +149,7 @@ export function DebtForm({ onFinished, debt }: { onFinished: () => void, debt?: 
               name="paymentDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
-                  <FormLabel>תאריך תשלום ראשון</FormLabel>
+                  <FormLabel>תאריך תשלום הבא</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>

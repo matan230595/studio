@@ -1,6 +1,6 @@
 export type Debt = {
   id: string;
-  borrower: {
+  creditor: {
     name: string;
     avatar: string;
   };
@@ -13,50 +13,59 @@ export type Debt = {
 
 export const debts: Debt[] = [
   {
-    id: 'L001',
-    borrower: { name: 'ישראל ישראלי', avatar: 'avatar1' },
-    amount: 50000,
-    interestRate: 3.5,
+    id: 'D001',
+    creditor: { name: 'יעקב כהן (חבר)', avatar: 'avatar1' },
+    amount: 5000,
+    interestRate: 0,
     status: 'active',
     nextPaymentDate: '2024-08-01',
-    nextPaymentAmount: 1500,
+    nextPaymentAmount: 500,
   },
   {
-    id: 'L002',
-    borrower: { name: 'לאה כהן', avatar: 'avatar2' },
-    amount: 120000,
-    interestRate: 4.1,
+    id: 'D002',
+    creditor: { name: 'בזק', avatar: 'bezeqLogo' },
+    amount: 250,
+    interestRate: 0,
     status: 'late',
     nextPaymentDate: '2024-07-15',
-    nextPaymentAmount: 2800,
+    nextPaymentAmount: 250,
   },
   {
-    id: 'L003',
-    borrower: { name: 'דוד לוי', avatar: 'avatar3' },
-    amount: 25000,
-    interestRate: 5.0,
+    id: 'D003',
+    creditor: { name: 'שכירות דירה', avatar: 'landlord' },
+    amount: 4500,
+    interestRate: 0,
     status: 'active',
     nextPaymentDate: '2024-08-05',
-    nextPaymentAmount: 800,
+    nextPaymentAmount: 4500,
   },
   {
-    id: 'L004',
-    borrower: { name: 'רותי שוורץ', avatar: 'avatar4' },
-    amount: 250000,
-    interestRate: 2.9,
+    id: 'D004',
+    creditor: { name: 'הלוואה - בנק לאומי', avatar: 'leumiLogo' },
+    amount: 25000,
+    interestRate: 4.5,
+    status: 'active',
+    nextPaymentDate: '2024-08-10',
+    nextPaymentAmount: 1200,
+  },
+  {
+    id: 'D005',
+    creditor: { name: 'ועד בית', avatar: 'building' },
+    amount: 150,
+    interestRate: 0,
     status: 'paid',
     nextPaymentDate: '-',
     nextPaymentAmount: 0,
   },
-    {
-    id: 'L005',
-    borrower: { name: 'משה מזרחי', avatar: 'avatar1' },
-    amount: 15000,
-    interestRate: 6.2,
+  {
+    id: 'D006',
+    creditor: { name: 'לאה כהן', avatar: 'avatar2' },
+    amount: 1200,
+    interestRate: 2.0,
     status: 'active',
-    nextPaymentDate: '2024-08-10',
-    nextPaymentAmount: 550,
-  },
+    nextPaymentDate: '2024-08-20',
+    nextPaymentAmount: 200,
+  }
 ];
 
 export type Activity = {
@@ -67,9 +76,9 @@ export type Activity = {
 };
 
 export const activities: Activity[] = [
-  { id: 'A01', description: 'תשלום בסך ₪1,500 התקבל', timestamp: 'לפני 2 ימים', debtId: 'L001' },
-  { id: 'A02', description: 'התראת איחור נשלחה', timestamp: 'לפני 5 ימים', debtId: 'L002' },
-  { id: 'A03', description: 'חוב חדש נוצר', timestamp: 'לפני שבוע', debtId: 'L003' },
-  { id: 'A04', description: 'החוב סולק במלואו', timestamp: 'לפני חודש', debtId: 'L004' },
-  { id: 'A05', description: 'תשלום בסך ₪550 התקבל', timestamp: 'לפני 10 ימים', debtId: 'L005' },
+  { id: 'A01', description: 'תשלום בסך ₪500 שולם', timestamp: 'לפני 2 ימים', debtId: 'D001' },
+  { id: 'A02', description: 'התראת איחור נשלחה', timestamp: 'לפני 5 ימים', debtId: 'D002' },
+  { id: 'A03', description: 'חוב חדש נוצר', timestamp: 'לפני שבוע', debtId: 'D003' },
+  { id: 'A04', description: 'החוב סולק במלואו', timestamp: 'לפני חודש', debtId: 'D005' },
+  { id: 'A05', description: 'תשלום בסך ₪1200 שולם', timestamp: 'לפני 10 ימים', debtId: 'D004' },
 ];
