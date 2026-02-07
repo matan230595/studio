@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth, useUser } from '@/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [authError, setAuthError] = useState<{title: string, message: string} | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(true); // To handle redirect flow
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -21,26 +22,43 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleGoogleSignIn = async () => {
+  // Handle the result of the redirect
+  useEffect(() => {
+      if (!auth) {
+          setIsSigningIn(false);
+          return;
+      };
+      
+      getRedirectResult(auth)
+        .then((result) => {
+            // If result is not null, a sign-in was successful.
+            // The onAuthStateChanged listener will handle the user state update and the
+            // other useEffect will trigger the redirect to the homepage.
+            // We just need to stop our loading indicator.
+        })
+        .catch((error) => {
+          // Handle Errors here.
+          console.error('Error from redirect result', error);
+           if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
+                 setAuthError({
+                    title: 'שגיאת התחברות',
+                    message: 'אירעה שגיאה במהלך ההתחברות. אנא נסה שוב.'
+                });
+            }
+        }).finally(() => {
+            setIsSigningIn(false);
+        });
+  }, [auth]);
+
+  const handleGoogleSignIn = () => {
     if (!auth) return;
     setAuthError(null);
+    setIsSigningIn(true);
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      router.push('/');
-    } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
-        return;
-      }
-      console.error('Error signing in with Google', error);
-      setAuthError({
-          title: 'שגיאת התחברות',
-          message: 'אירעה שגיאה לא צפויה. אנא נסה שוב.'
-      });
-    }
+    signInWithRedirect(auth, provider);
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading || user || isSigningIn) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-4">
@@ -64,9 +82,9 @@ export default function LoginPage() {
             <p className="text-lg text-muted-foreground">
                 התחבר באמצעות חשבון הגוגל שלך כדי להתחיל לנהל את ההתחייבויות שלך.
             </p>
-            <Button onClick={handleGoogleSignIn} className="w-full" size="lg">
+            <Button onClick={handleGoogleSignIn} className="w-full" size="lg" disabled={isSigningIn}>
                 <FaGoogle className="ms-2 h-5 w-5" />
-                התחבר עם גוגל
+                {isSigningIn ? 'מתחבר...' : 'התחבר עם גוגל'}
             </Button>
             
             {authError && (
