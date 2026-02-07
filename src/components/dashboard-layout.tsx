@@ -1,5 +1,7 @@
 "use client";
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -15,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Home, Landmark, FileText, Settings, Bell } from 'lucide-react';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
 
   return (
     <SidebarProvider>
@@ -28,47 +31,59 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive tooltip={{children: 'לוח מחוונים', side: 'right'}}>
-                <Home />
-                <span>לוח מחוונים</span>
-              </SidebarMenuButton>
+              <Link href="/">
+                <SidebarMenuButton isActive={pathname === '/'} tooltip={{children: 'לוח מחוונים', side: 'right'}}>
+                  <Home />
+                  <span>לוח מחוונים</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'ניהול חובות', side: 'right'}}>
-                <Landmark />
-                <span>ניהול חובות</span>
-              </SidebarMenuButton>
+               <Link href="/debts">
+                <SidebarMenuButton isActive={pathname.startsWith('/debts')} tooltip={{children: 'ניהול חובות', side: 'right'}}>
+                  <Landmark />
+                  <span>ניהול חובות</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'דוחות', side: 'right'}}>
-                <FileText />
-                <span>דוחות</span>
-              </SidebarMenuButton>
+               <Link href="/reports">
+                <SidebarMenuButton isActive={pathname.startsWith('/reports')} tooltip={{children: 'דוחות', side: 'right'}}>
+                  <FileText />
+                  <span>דוחות</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'התראות', side: 'right'}}>
-                <Bell />
-                <span>התראות</span>
-              </SidebarMenuButton>
+              <Link href="/notifications">
+                <SidebarMenuButton isActive={pathname.startsWith('/notifications')} tooltip={{children: 'התראות', side: 'right'}}>
+                  <Bell />
+                  <span>התראות</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'הגדרות', side: 'right'}}>
-                <Settings />
-                <span>הגדרות</span>
-              </SidebarMenuButton>
+              <Link href="/settings">
+                <SidebarMenuButton isActive={pathname.startsWith('/settings')} tooltip={{children: 'הגדרות', side: 'right'}}>
+                  <Settings />
+                  <span>הגדרות</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-               <SidebarMenuButton tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
-                  <AvatarFallback>אא</AvatarFallback>
-                </Avatar>
-                <span>אביב אביבי</span>
-              </SidebarMenuButton>
+               <Link href="/profile">
+                <SidebarMenuButton isActive={pathname.startsWith('/profile')} tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
+                    <AvatarFallback>אא</AvatarFallback>
+                  </Avatar>
+                  <span>אביב אביבי</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

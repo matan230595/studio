@@ -32,7 +32,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DashboardLayout } from '@/components/dashboard-layout';
 import { DebtForm } from '@/components/loan-form';
 import { debts as initialDebts, activities, Debt } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -86,8 +85,7 @@ export default function Dashboard() {
   const lateDebts = debts.filter(l => l.status === 'late').length;
 
   return (
-    <DashboardLayout>
-      <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
         <header className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-3xl font-bold tracking-tight">
@@ -248,7 +246,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-      </main>
       <AlertDialog open={!!deletingDebt} onOpenChange={(open) => !open && setDeletingDebt(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -263,6 +260,6 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </DashboardLayout>
+    </div>
   );
 }
