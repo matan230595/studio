@@ -114,19 +114,23 @@ export default function AssistantPage() {
         <CardContent className="flex-1 p-0">
             <ScrollArea className="h-[calc(100vh-20rem)] p-6" ref={scrollAreaRef}>
                 <div className="space-y-6">
-                {messages.map((message) =>
-                  message.role === 'user' ? (
-                    <div key={message.id} className="flex items-start gap-3 justify-end">
-                      <div className="flex items-end gap-2 max-w-[75%] rounded-lg p-3 text-sm bg-primary text-primary-foreground">
-                        <p style={{ whiteSpace: 'pre-wrap' }}>{message.content}</p>
-                      </div>
-                      <Avatar className="h-9 w-9 border">
-                        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-                          <UserIcon className="h-5 w-5" />
+                {messages.map((message) => {
+                  if (message.role === 'user') {
+                    return (
+                      <div key={message.id} className="flex items-start gap-3 justify-end">
+                        <div className="flex items-end gap-2 max-w-[75%] rounded-lg p-3 text-sm bg-primary text-primary-foreground">
+                          <p style={{ whiteSpace: 'pre-wrap' }}>{message.content}</p>
                         </div>
-                      </Avatar>
-                    </div>
-                  ) : (
+                        <Avatar className="h-9 w-9 border">
+                          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                            <UserIcon className="h-5 w-5" />
+                          </div>
+                        </Avatar>
+                      </div>
+                    );
+                  }
+                  
+                  return (
                     <div key={message.id} className="flex items-start gap-3 justify-start">
                       <Avatar className="h-9 w-9 border">
                         <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
@@ -140,8 +144,8 @@ export default function AssistantPage() {
                         )}
                       </div>
                     </div>
-                  )
-                )}
+                  );
+                })}
                 {isLoading && (
                     <div className="flex items-start gap-3 justify-start">
                         <Avatar className="h-9 w-9 border">
