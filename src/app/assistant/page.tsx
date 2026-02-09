@@ -117,12 +117,12 @@ export default function AssistantPage() {
                 {messages.map((message, index) => (
                     <div
                     key={index}
-                    className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}
+                    className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}
                     >
-                    {message.role === 'assistant' && (
+                    {message.role === 'user' && (
                         <Avatar className="h-9 w-9 border">
-                           <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
-                                <Sparkles className="h-5 w-5" />
+                           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                                <UserIcon className="h-5 w-5" />
                            </div>
                         </Avatar>
                     )}
@@ -138,22 +138,17 @@ export default function AssistantPage() {
                             <Volume2 className="h-4 w-4 text-muted-foreground animate-pulse" />
                         )}
                     </div>
-                     {message.role === 'user' && (
+                     {message.role === 'assistant' && (
                         <Avatar className="h-9 w-9 border">
-                           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-                                <UserIcon className="h-5 w-5" />
+                           <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+                                <Sparkles className="h-5 w-5" />
                            </div>
                         </Avatar>
                     )}
                     </div>
                 ))}
                 {isLoading && (
-                    <div className="flex items-start gap-3">
-                        <Avatar className="h-9 w-9 border">
-                             <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
-                                <Sparkles className="h-5 w-5" />
-                           </div>
-                        </Avatar>
+                    <div className="flex items-start gap-3 justify-end">
                         <div className="max-w-[75%] rounded-lg p-3 text-sm bg-muted">
                             <div className="flex items-center gap-2">
                                 <Skeleton className="h-2 w-2 rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -161,6 +156,11 @@ export default function AssistantPage() {
                                 <Skeleton className="h-2 w-2 rounded-full animate-bounce" />
                             </div>
                         </div>
+                        <Avatar className="h-9 w-9 border">
+                             <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+                                <Sparkles className="h-5 w-5" />
+                           </div>
+                        </Avatar>
                     </div>
                 )}
                 </div>
@@ -174,7 +174,7 @@ export default function AssistantPage() {
               placeholder={isLoadingTransactions ? "טוען נתונים..." : "שאל אותי משהו על ההתחייבויות שלך..."}
               disabled={isLoading || isLoadingTransactions}
             />
-            <Button type="submit" disabled={isLoading || isLoadingTransactions}>
+            <Button type="submit" size="icon" disabled={isLoading || isLoadingTransactions}>
               <Send className="h-4 w-4" />
               <span className="sr-only">שלח</span>
             </Button>
