@@ -12,50 +12,53 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Don't run the effect until Firebase has determined the initial auth state.
+    // Wait until the initial auth state is determined.
     if (isUserLoading) {
-        return; 
+      return;
     }
-    
+
     const isLoginPage = pathname === '/login';
 
-    // If the user is not logged in and they are trying to access a protected page,
-    // redirect them to the login page.
-    if (!user && !isLoginPage) {
-        router.push('/login');
+    // If user is logged in, but on the login page, redirect to home.
+    if (user && isLoginPage) {
+      router.push('/');
     }
 
-    // Redirecting a logged-in user away from the login page is now handled
-    // by the login page itself, simplifying the logic here and preventing race conditions.
-
+    // If user is NOT logged in and is trying to access a protected page,
+    // redirect to the login page.
+    if (!user && !isLoginPage) {
+      router.push('/login');
+    }
   }, [user, isUserLoading, router, pathname]);
 
-  // While Firebase is initializing and checking the auth state, show a global loader.
+  // While loading, show a global skeleton loader.
   if (isUserLoading) {
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                </div>
-            </div>
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
         </div>
+      </div>
     );
   }
+  
+  const isLoginPage = pathname === '/login';
 
-  // If there is a user and they are on a protected page, render the dashboard layout.
-  if (user && pathname !== '/login') {
+  // If there's a user and we're not on the login page, show the protected content.
+  if (user && !isLoginPage) {
     return <DashboardLayout>{children}</DashboardLayout>;
   }
 
-  // If there is no user and they are on the login page, render the login page.
-  if (!user && pathname === '/login') {
-      return <>{children}</>;
+  // If there's no user and we are on the login page, show the login form.
+  if (!user && isLoginPage) {
+    return <>{children}</>;
   }
-  
-  // In other cases (like a logged-in user on the login page waiting for redirect),
-  // render nothing to avoid content flashes.
+
+  // For any other intermediate state (e.g., a logged-in user on /login waiting for redirect),
+  // render nothing to avoid content flashes. The useEffect will handle the redirect.
   return null;
 }
