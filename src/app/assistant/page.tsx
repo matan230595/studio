@@ -114,9 +114,9 @@ export default function AssistantPage() {
         <CardContent className="flex-1 p-0">
             <ScrollArea className="h-[calc(100vh-20rem)] p-6" ref={scrollAreaRef}>
                 <div className="space-y-6">
-                {messages.map((message, index) => (
+                {messages.map((message) => (
                     <div
-                    key={index}
+                    key={message.id}
                     className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}
                     >
                     {message.role === 'user' && (
