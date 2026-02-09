@@ -114,41 +114,41 @@ export default function AssistantPage() {
         <CardContent className="flex-1 p-0">
             <ScrollArea className="h-[calc(100vh-20rem)] p-6" ref={scrollAreaRef}>
                 <div className="space-y-6">
-                {messages.map((message) => (
-                    <div
-                    key={message.id}
-                    className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}
-                    >
-                    {message.role === 'user' && (
-                        <Avatar className="h-9 w-9 border">
-                           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-                                <UserIcon className="h-5 w-5" />
-                           </div>
-                        </Avatar>
-                    )}
-                    <div
-                        className={`flex items-end gap-2 max-w-[75%] rounded-lg p-3 text-sm ${
-                        message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                    >
-                        <p style={{whiteSpace: 'pre-wrap'}}>{message.content}</p>
-                        {message.role === 'assistant' && speakingMessageId === message.id && (
-                            <Volume2 className="h-4 w-4 text-muted-foreground animate-pulse" />
-                        )}
+                {messages.map((message) =>
+                  message.role === 'user' ? (
+                    <div key={message.id} className="flex items-start gap-3 justify-end">
+                      <div className="flex items-end gap-2 max-w-[75%] rounded-lg p-3 text-sm bg-primary text-primary-foreground">
+                        <p style={{ whiteSpace: 'pre-wrap' }}>{message.content}</p>
+                      </div>
+                      <Avatar className="h-9 w-9 border">
+                        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                          <UserIcon className="h-5 w-5" />
+                        </div>
+                      </Avatar>
                     </div>
-                     {message.role === 'assistant' && (
+                  ) : (
+                    <div key={message.id} className="flex items-start gap-3 justify-start">
+                      <Avatar className="h-9 w-9 border">
+                        <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+                          <Sparkles className="h-5 w-5" />
+                        </div>
+                      </Avatar>
+                      <div className="flex items-end gap-2 max-w-[75%] rounded-lg p-3 text-sm bg-muted">
+                        <p style={{ whiteSpace: 'pre-wrap' }}>{message.content}</p>
+                        {speakingMessageId === message.id && (
+                          <Volume2 className="h-4 w-4 text-muted-foreground animate-pulse" />
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
+                {isLoading && (
+                    <div className="flex items-start gap-3 justify-start">
                         <Avatar className="h-9 w-9 border">
-                           <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+                             <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
                                 <Sparkles className="h-5 w-5" />
                            </div>
                         </Avatar>
-                    )}
-                    </div>
-                ))}
-                {isLoading && (
-                    <div className="flex items-start gap-3 justify-end">
                         <div className="max-w-[75%] rounded-lg p-3 text-sm bg-muted">
                             <div className="flex items-center gap-2">
                                 <Skeleton className="h-2 w-2 rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -156,11 +156,6 @@ export default function AssistantPage() {
                                 <Skeleton className="h-2 w-2 rounded-full animate-bounce" />
                             </div>
                         </div>
-                        <Avatar className="h-9 w-9 border">
-                             <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
-                                <Sparkles className="h-5 w-5" />
-                           </div>
-                        </Avatar>
                     </div>
                 )}
                 </div>
