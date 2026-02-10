@@ -203,13 +203,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     if (transactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
     return (
     <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">רשימת {entityNamePlural}</CardTitle>
-        <CardDescription>
-          סה"כ {transactions.length} {entityNamePlural} רשומים במערכת.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className='pt-6'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -426,7 +420,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   }
   
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight">
@@ -444,7 +438,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 הוספת {entityName}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90svh] overflow-y-auto">
                 <DialogHeader>
                 <DialogTitle className="font-headline text-2xl">{editingTransaction ? `עריכת ${entityName}` : `הוספת ${entityName} חדש`}</DialogTitle>
                 <DialogDescription>
@@ -489,6 +483,6 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </main>
   );
 }

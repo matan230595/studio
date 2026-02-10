@@ -12,11 +12,13 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut, Sparkles } from 'lucide-react';
+import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut, Sparkles, Menu } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { Button } from './ui/button';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -41,18 +43,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar side="right">
+      <Sidebar side="right" collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-8 w-8 text-primary-foreground"><rect width="256" height="256" fill="none"/><path fill="currentColor" d="M208,56V200a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V56A16,16,0,0,1,64,40H192A16,16,0,0,1,208,56ZM96,168a8,8,0,0,0,8,8h48a8,8,0,0,0,0-16H104A8,8,0,0,0,96,168Zm8-40a8,8,0,0,0,0,16h48a8,8,0,0,0,0-16Z"/></svg>
-            <h1 className="font-headline text-2xl font-bold text-primary-foreground">DebtWise</h1>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-8 w-8 text-sidebar-primary"><rect width="256" height="256" fill="none"/><path fill="currentColor" d="M208,56V200a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V56A16,16,0,0,1,64,40H192A16,16,0,0,1,208,56ZM96,168a8,8,0,0,0,8,8h48a8,8,0,0,0,0-16H104A8,8,0,0,0,96,168Zm8-40a8,8,0,0,0,0,16h48a8,8,0,0,0,0-16Z"/></svg>
+            <h1 className="font-headline text-2xl font-bold text-sidebar-primary-foreground group-data-[collapsible=icon]:hidden">DebtWise</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href="/">
-                <SidebarMenuButton isActive={pathname === '/'} tooltip={{children: 'לוח מחוונים', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname === '/'} tooltip={{children: 'לוח מחוונים', side: 'left'}}>
                   <Home />
                   <span>לוח מחוונים</span>
                 </SidebarMenuButton>
@@ -60,7 +62,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
                <Link href="/debts">
-                <SidebarMenuButton isActive={pathname.startsWith('/debts')} tooltip={{children: 'ניהול חובות', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/debts')} tooltip={{children: 'ניהול חובות', side: 'left'}}>
                   <Banknote />
                   <span>ניהול חובות</span>
                 </SidebarMenuButton>
@@ -68,7 +70,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
                <Link href="/loans">
-                <SidebarMenuButton isActive={pathname.startsWith('/loans')} tooltip={{children: 'ניהול הלוואות', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/loans')} tooltip={{children: 'ניהול הלוואות', side: 'left'}}>
                   <Landmark />
                   <span>ניהול הלוואות</span>
                 </SidebarMenuButton>
@@ -76,7 +78,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
                <Link href="/reports">
-                <SidebarMenuButton isActive={pathname.startsWith('/reports')} tooltip={{children: 'דוחות', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/reports')} tooltip={{children: 'דוחות', side: 'left'}}>
                   <FileText />
                   <span>דוחות</span>
                 </SidebarMenuButton>
@@ -84,7 +86,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
              <SidebarMenuItem>
               <Link href="/assistant">
-                <SidebarMenuButton isActive={pathname.startsWith('/assistant')} tooltip={{children: 'עוזר AI', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/assistant')} tooltip={{children: 'עוזר AI', side: 'left'}}>
                   <Sparkles />
                   <span>עוזר AI</span>
                 </SidebarMenuButton>
@@ -92,7 +94,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <Link href="/notifications">
-                <SidebarMenuButton isActive={pathname.startsWith('/notifications')} tooltip={{children: 'התראות', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/notifications')} tooltip={{children: 'התראות', side: 'left'}}>
                   <Bell />
                   <span>התראות</span>
                 </SidebarMenuButton>
@@ -104,7 +106,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href="/settings">
-                <SidebarMenuButton isActive={pathname.startsWith('/settings')} tooltip={{children: 'הגדרות', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/settings')} tooltip={{children: 'הגדרות', side: 'left'}}>
                   <Settings />
                   <span>הגדרות</span>
                 </SidebarMenuButton>
@@ -112,25 +114,35 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
                <Link href="/profile">
-                <SidebarMenuButton isActive={pathname.startsWith('/profile')} tooltip={{children: 'פרופיל משתמש', side: 'right'}}>
+                <SidebarMenuButton isActive={pathname.startsWith('/profile')} tooltip={{children: 'פרופיל משתמש', side: 'left'}}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? "User"} />
                     <AvatarFallback>{user.displayName?.charAt(0).toUpperCase() ?? user.email?.charAt(0).toUpperCase() ?? 'U'}</AvatarFallback>
                   </Avatar>
-                  <span>{user.displayName ?? user.email}</span>
+                  <span className="group-data-[collapsible=icon]:hidden">{user.displayName ?? user.email}</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleSignOut} tooltip={{children: 'התנתק', side: 'right'}}>
+                <SidebarMenuButton onClick={handleSignOut} tooltip={{children: 'התנתק', side: 'left'}}>
                   <LogOut />
-                  <span>התנתק</span>
+                  <span className="group-data-[collapsible=icon]:hidden">התנתק</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+            <SidebarTrigger className="md:hidden">
+              <Menu />
+            </SidebarTrigger>
+            <div className="w-full flex-1">
+              {/* You can add a global search bar here if you want */}
+            </div>
+          </header>
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }

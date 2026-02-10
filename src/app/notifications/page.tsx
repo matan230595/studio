@@ -8,6 +8,7 @@ import type { Transaction } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { differenceInDays, formatDistanceToNowStrict } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const activityIcons: Record<string, React.ReactElement> = {
     paid: <BadgeCheck className="h-5 w-5 text-green-500" />,
@@ -22,18 +23,21 @@ const getActivityInfo = (transaction: Transaction) => {
         case 'paid':
             return {
                 description: `התשלום בסך ₪${transaction.amount.toLocaleString()} בוצע עבור ${transaction.creditor.name}`,
-                icon: activityIcons.paid
+                icon: activityIcons.paid,
+                color: 'text-green-500'
             };
         case 'late':
             return {
                 description: `איחור בתשלום בסך ₪${transaction.amount.toLocaleString()} עבור ${transaction.creditor.name}`,
-                icon: activityIcons.late
+                icon: activityIcons.late,
+                color: 'text-red-500'
             };
         case 'active':
         default:
              return {
                 description: `התחייבות חדשה נוצרה מול ${transaction.creditor.name}`,
-                icon: activityIcons[transaction.type] || activityIcons.default
+                icon: activityIcons[transaction.type] || activityIcons.default,
+                color: 'text-muted-foreground'
             };
     }
 };
@@ -68,7 +72,7 @@ export default function NotificationsPage() {
   
   if (isLoading) {
       return (
-          <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
               <header>
                   <Skeleton className="h-9 w-40" />
                   <Skeleton className="h-5 w-80 mt-2" />
@@ -94,12 +98,12 @@ export default function NotificationsPage() {
                     </CardContent>
                 </Card>
               </div>
-          </div>
+          </main>
       )
   }
   
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
       <header>
         <h1 className="font-headline text-3xl font-bold tracking-tight">
           התראות ופיד פעילות
@@ -123,8 +127,8 @@ export default function NotificationsPage() {
                 const daysUntilDue = formatDistanceToNowStrict(dueDate, { addSuffix: true, locale: he });
 
                 return (
-                    <div key={`reminder-${transaction.id}`} className="flex items-center gap-4 rounded-lg border-r-4 border-yellow-500 bg-muted/50 p-4">
-                        <div className="bg-yellow-500/20 rounded-full p-2 hidden sm:block">
+                    <div key={`reminder-${transaction.id}`} className="flex items-center gap-4 rounded-lg border-r-4 border-yellow-400 bg-yellow-400/10 p-4 transition-colors hover:bg-yellow-400/20">
+                        <div className="bg-yellow-400/20 rounded-full p-2 hidden sm:block">
                             <Clock className="h-5 w-5 text-yellow-600" />
                         </div>
                         <div className="flex-grow">
@@ -160,11 +164,11 @@ export default function NotificationsPage() {
         <CardContent>
           <div className="space-y-2">
             {sortedActivities.length > 0 ? sortedActivities.map((transaction) => {
-                const { description, icon } = getActivityInfo(transaction);
+                const { description, icon, color } = getActivityInfo(transaction);
                 return (
-                    <div key={transaction.id} className="flex items-start gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors">
-                        <div className="bg-muted rounded-full p-2 mt-1">
-                           {icon}
+                    <div key={transaction.id} className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-accent">
+                        <div className={cn("mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-accent", color)}>
+                           {React.cloneElement(icon, { className: "h-5 w-5" })}
                         </div>
                         <div className="flex-grow">
                             <p className="font-medium">
@@ -190,6 +194,6 @@ export default function NotificationsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }

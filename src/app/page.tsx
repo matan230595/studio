@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { DollarSign, Percent, Hourglass, AlertCircle, TrendingUp, TrendingDown, Clock, CheckCircle2 } from 'lucide-react';
+import { DollarSign, Percent, AlertCircle, TrendingUp, TrendingDown, CheckCircle2, PlusCircle, Landmark, Banknote, } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -20,12 +20,22 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Transaction } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isSameMonth, parseISO, isAfter, format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { TransactionForm } from '@/components/transaction-form';
+import { useToast } from '@/hooks/use-toast';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -36,28 +46,44 @@ const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondar
 export default function Dashboard() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [formType, setFormType] = React.useState<'debt' | 'loan'>('debt');
+  
   const transactionsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return collection(firestore, 'users', user.uid, 'transactions');
   }, [user, firestore]);
 
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
+  
+  const entityName = formType === 'debt' ? 'חוב' : 'הלוואה';
 
-  const { stats, upcomingPaymentsChartData, lateTransactions, upcomingTransactions } = React.useMemo(() => {
-    if (!transactions) return { stats: { totalOwed: 0, monthlyRepayment: 0, lateItems: 0, activeItems: 0, totalLoans: 0, totalDebts: 0 }, upcomingPaymentsChartData: [], lateTransactions: [], upcomingTransactions: [] };
+  const handleFormFinished = (newTransaction: Transaction) => {
+    if (!user || !firestore) return;
+    const { id, ...dataToSave } = newTransaction;
+    const transactionWithUser = { ...dataToSave, userId: user.uid };
+    
+    const collectionRef = collection(firestore, 'users', user.uid, 'transactions');
+    addDocumentNonBlocking(collectionRef, transactionWithUser);
+    toast({ title: `${entityName} חדש נוסף`, description: `${entityName} חדש עבור ${newTransaction.creditor.name} נוסף למערכת.` });
+    
+    setIsFormOpen(false);
+  };
+
+  const { stats, upcomingPaymentsChartData, lateTransactions } = React.useMemo(() => {
+    if (!transactions) return { stats: { totalOwed: 0, monthlyRepayment: 0, totalLoans: 0, totalDebts: 0 }, upcomingPaymentsChartData: [], lateTransactions: [] };
     
     const now = new Date();
     const activeTransactions = transactions.filter(t => t.status !== 'paid');
 
     const totalOwed = activeTransactions.reduce((acc, item) => acc + item.amount, 0);
     const monthlyRepayment = transactions.filter(d => d.status === 'active' && d.paymentType === 'installments').reduce((acc, item) => acc + (item.nextPaymentAmount || 0), 0);
-    const lateItems = transactions.filter(l => l.status === 'late').length;
-    const activeItems = activeTransactions.length;
     const totalLoans = activeTransactions.filter(t => t.type === 'loan').reduce((acc, t) => acc + t.amount, 0);
     const totalDebts = activeTransactions.filter(t => t.type === 'debt').reduce((acc, t) => acc + t.amount, 0);
 
-    const stats = { totalOwed, monthlyRepayment, lateItems, activeItems, totalLoans, totalDebts };
+    const stats = { totalOwed, monthlyRepayment, totalLoans, totalDebts };
 
     const upcomingThisMonth = transactions
         .filter(t => t.status === 'active' && isSameMonth(parseISO(t.dueDate), now) && isAfter(parseISO(t.dueDate), now))
@@ -70,19 +96,14 @@ export default function Dashboard() {
     }));
     
     const late = transactions?.filter(t => t.status === 'late').sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) || [];
-    
-    const upcoming = transactions
-      ?.filter(t => t.status === 'active' && new Date(t.dueDate) >= new Date())
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-      .slice(0, 5) || [];
 
-    return { stats, upcomingPaymentsChartData: chartData, lateTransactions: late, upcomingTransactions: upcoming };
+    return { stats, upcomingPaymentsChartData: chartData, lateTransactions: late };
   }, [transactions]);
 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
         <header>
           <Skeleton className="h-9 w-64" />
           <Skeleton className="h-5 w-80 mt-2" />
@@ -94,20 +115,32 @@ export default function Dashboard() {
           <Card className="md:col-span-3"><CardHeader><Skeleton className="h-7 w-48" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
           <Card className="md:col-span-2"><CardHeader><Skeleton className="h-7 w-32" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
-        <header>
-          <h1 className="font-headline text-3xl font-bold tracking-tight">
-            ברוך הבא, {user?.displayName || 'משתמש'}!
-          </h1>
-          <p className="text-muted-foreground">
-            הנה סיכום מצב ההתחייבויות שלך.
-          </p>
-        </header>
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
+        <div className="flex items-center justify-between">
+          <header>
+            <h1 className="font-headline text-3xl font-bold tracking-tight">
+              ברוך הבא, {user?.displayName || 'משתמש'}!
+            </h1>
+            <p className="text-muted-foreground">
+              הנה סיכום מצב ההתחייבויות שלך.
+            </p>
+          </header>
+          <div className='flex items-center gap-2'>
+            <Button onClick={() => { setFormType('debt'); setIsFormOpen(true); }}>
+              <PlusCircle className="ms-2 h-4 w-4" />
+              <span>הוספת חוב</span>
+            </Button>
+            <Button variant="secondary" onClick={() => { setFormType('loan'); setIsFormOpen(true); }}>
+              <PlusCircle className="ms-2 h-4 w-4" />
+              <span>הוספת הלוואה</span>
+            </Button>
+          </div>
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -132,7 +165,7 @@ export default function Dashboard() {
           </Card>
            <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">הלוואות פעילות</CardTitle>
+              <CardTitle className="text-sm font-medium">סך הלוואות</CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
@@ -142,7 +175,7 @@ export default function Dashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">חובות פעילים</CardTitle>
+              <CardTitle className="text-sm font-medium">סך חובות</CardTitle>
               <TrendingDown className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
@@ -222,6 +255,17 @@ export default function Dashboard() {
               </CardContent>
             </Card>
         </div>
-    </div>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogContent className="sm:max-w-[425px] max-h-[90svh] overflow-y-auto">
+                <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">{`הוספת ${entityName} חדש`}</DialogTitle>
+                <DialogDescription>
+                    {`מלא את הפרטים כדי להוסיף ${entityName} חדש למערכת.`}
+                </DialogDescription>
+                </DialogHeader>
+                <TransactionForm onFinished={handleFormFinished} transaction={null} fixedType={formType} />
+            </DialogContent>
+            </Dialog>
+    </main>
   );
 }
