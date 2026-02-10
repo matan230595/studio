@@ -321,6 +321,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
+                        fixedWeeks
                       />
                     </PopoverContent>
                   </Popover>
@@ -360,6 +361,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
+                        fixedWeeks
                       />
                     </PopoverContent>
                   </Popover>
