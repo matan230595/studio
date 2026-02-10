@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { CalendarIcon, PlusCircle } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -24,68 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
+
 import { format } from "date-fns"
 import { Transaction } from "@/lib/data"
-import { cn } from "@/lib/utils"
-
-// DatePicker component
-function DatePicker({
-  value,
-  onChange,
-}: {
-  value?: string
-  onChange: (date?: Date) => void
-}) {
-  const [isOpen, setIsOpen] = React.useState(false)
-
-  const handleDateSelect = (date?: Date) => {
-    onChange(date)
-    setIsOpen(false)
-  }
-
-  const handleCancel = () => {
-    setIsOpen(false)
-  }
-
-  const dateValue = value ? new Date(value) : undefined
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-full justify-end text-right font-normal",
-            !value && "text-muted-foreground"
-          )}
-        >
-          <span>
-            {value ? format(new Date(value), "dd/MM/yyyy") : "בחר תאריך"}
-          </span>
-          <CalendarIcon className="mr-auto h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={dateValue}
-          onDateSelect={handleDateSelect}
-          onCancel={handleCancel}
-          initialFocus
-          captionLayout="dropdown-buttons"
-          fromYear={1960}
-          toYear={new Date().getFullYear() + 10}
-        />
-      </PopoverContent>
-    </Popover>
-  )
-}
 
 const dateStringSchema = z
   .string()
@@ -106,7 +47,7 @@ const formSchema = z
       .positive({ message: "הסכום חייב להיות מספר חיובי." })
       .optional(),
     startDate: dateStringSchema.optional().or(z.literal("")),
-    dueDate: dateStringSchema.min(1, { message: "יש לבחור תאריך יעד." }),
+    dueDate: dateStringSchema.min(1, { message: "יש להזין תאריך יעד." }),
     interestRate: z.coerce
       .number()
       .min(0, { message: "הריבית לא יכולה להיות שלילית." })
@@ -414,14 +355,15 @@ export function TransactionForm({
             control={form.control}
             name="startDate"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>תאריך התחלה</FormLabel>
-                <DatePicker
-                  value={field.value}
-                  onChange={date =>
-                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
-                  }
-                />
+                <FormControl>
+                  <Input
+                    placeholder="YYYY-MM-DD"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -430,18 +372,19 @@ export function TransactionForm({
             control={form.control}
             name="dueDate"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>
                   {paymentType === "installments"
                     ? "תאריך תשלום הבא"
                     : "תאריך יעד"}
                 </FormLabel>
-                <DatePicker
-                  value={field.value}
-                  onChange={date =>
-                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
-                  }
-                />
+                <FormControl>
+                   <Input
+                    placeholder="YYYY-MM-DD"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
