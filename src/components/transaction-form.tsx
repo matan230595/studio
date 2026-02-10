@@ -295,7 +295,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
                   <FormLabel>תאריך התחלה</FormLabel>
-                  <Popover modal={true}>
+                  <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -334,7 +334,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
                   <FormLabel>{paymentType === 'installments' ? 'תאריך תשלום הבא' : 'תאריך יעד'}</FormLabel>
-                   <Popover modal={true}>
+                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
