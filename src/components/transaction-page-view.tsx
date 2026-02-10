@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet, Wallet, Repeat, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -225,7 +225,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
           </TableHeader>
           <TableBody>
             {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
+              <TableRow key={transaction.id} className="group">
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="hidden h-9 w-9 sm:flex">
@@ -247,7 +247,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                   </Badge>
                 </TableCell>
                 <TableCell>
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => { setEditingTransaction(transaction); setIsFormOpen(true); }}>
                             <Pencil className="h-4 w-4" />
                             <span className="sr-only">ערוך</span>
@@ -272,7 +272,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {transactions.map(transaction => (
-        <Card key={transaction.id} className="flex flex-col">
+        <Card key={transaction.id} className="group flex flex-col transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
           <CardHeader className="flex flex-row items-start gap-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src={getAvatarUrl(transaction.creditor.avatar)} alt={transaction.creditor.name} data-ai-hint={getAiHint(transaction.creditor.avatar)} />
@@ -287,7 +287,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 </div>
               </CardDescription>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <Button size="icon" variant="ghost" onClick={() => { setEditingTransaction(transaction); setIsFormOpen(true); }}>
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">ערוך</span>
@@ -299,22 +299,33 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
             </div>
           </CardHeader>
           <CardContent className="flex-grow space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">{transactionType === 'loan' ? 'סכום נותר' : 'סכום החוב'}</p>
-              <p className="font-headline text-2xl font-bold">₪{transaction.amount.toLocaleString('he-IL')}</p>
+            <div className="flex items-start gap-4">
+              <Wallet className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{transactionType === 'loan' ? 'סכום נותר' : 'סכום החוב'}</p>
+                <p className="font-headline text-2xl font-bold">₪{transaction.amount.toLocaleString('he-IL')}</p>
+              </div>
             </div>
-             {transactionType === 'loan' && <div>
-              <p className="text-sm font-medium text-muted-foreground">אופן תשלום</p>
-              <p className="text-sm">
-                {transaction.paymentType === 'single' ? 'תשלום חד פעמי' : `תשלומים`}
-                {transaction.paymentType === 'installments' && transaction.nextPaymentAmount && (
-                  <span className="text-muted-foreground"> (₪${transaction.nextPaymentAmount.toLocaleString('he-IL')} הבא)</span>
-                )}
-                </p>
-            </div>}
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">תאריך יעד</p>
-              <p className="text-sm">{transaction.dueDate}</p>
+            {transactionType === 'loan' && (
+              <div className="flex items-start gap-4">
+                <Repeat className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">אופן תשלום</p>
+                  <p className="text-sm">
+                    {transaction.paymentType === 'single' ? 'תשלום חד פעמי' : `תשלומים`}
+                    {transaction.paymentType === 'installments' && transaction.nextPaymentAmount && (
+                      <span className="text-muted-foreground"> (₪${transaction.nextPaymentAmount.toLocaleString('he-IL')} הבא)</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="flex items-start gap-4">
+              <Calendar className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">תאריך יעד</p>
+                <p className="text-sm">{transaction.dueDate}</p>
+              </div>
             </div>
           </CardContent>
           <CardFooter className={`flex text-xs text-muted-foreground ${transactionType === 'loan' ? 'justify-between' : 'justify-end'}`}>
