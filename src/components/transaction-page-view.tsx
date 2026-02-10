@@ -314,7 +314,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                   <p className="text-sm">
                     {transaction.paymentType === 'single' ? 'תשלום חד פעמי' : `תשלומים`}
                     {transaction.paymentType === 'installments' && transaction.nextPaymentAmount && (
-                      <span className="text-muted-foreground"> (₪${transaction.nextPaymentAmount.toLocaleString('he-IL')} הבא)</span>
+                      <span className="text-muted-foreground"> (₪${transaction.nextPaymentAmount.toLocaleString('he-IL')})</span>
                     )}
                   </p>
                 </div>
