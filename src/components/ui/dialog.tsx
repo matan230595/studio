@@ -43,8 +43,7 @@ const DialogContent = React.forwardRef<
       )}
       onPointerDownOutside={(e) => {
         const target = e.target as HTMLElement;
-        // This is the key fix. It checks if the click was inside ANY popover or select dropdown.
-        if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('[data-radix-popover-content]')) {
+        if (target.closest('[data-radix-popper-content-wrapper]')) {
           e.preventDefault();
         }
       }}
