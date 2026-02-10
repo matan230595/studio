@@ -17,7 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,6 +50,9 @@ const formSchema = z.object({
 
 export function TransactionForm({ onFinished, transaction, fixedType }: { onFinished: (transaction: Transaction) => void, transaction?: Transaction | null, fixedType?: 'debt' | 'loan' }) {
   
+  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = React.useState(false);
+  const [isDueDatePickerOpen, setIsDueDatePickerOpen] = React.useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: transaction ? (
@@ -287,7 +289,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
             />
         )}
 
-
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
            <FormField
               control={form.control}
@@ -295,36 +296,44 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
                   <FormLabel>תאריך התחלה</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-right font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "dd/MM/yyyy")
-                          ) : (
-                            <span>בחר תאריך</span>
-                          )}
-                          <CalendarIcon className="me-auto h-4 w-4" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        locale={he}
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        fixedWeeks
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <Button
+                      type="button"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                      onClick={() => {
+                        setIsDueDatePickerOpen(false);
+                        setIsStartDatePickerOpen(!isStartDatePickerOpen);
+                      }}
+                    >
+                      {field.value ? (
+                        format(field.value, "dd/MM/yyyy")
+                      ) : (
+                        <span>בחר תאריך</span>
+                      )}
+                      <CalendarIcon className="me-auto h-4 w-4" />
+                    </Button>
+                  </FormControl>
+                  {isStartDatePickerOpen && (
+                     <div className="relative">
+                        <div className="absolute z-20 w-full bg-background rounded-md border shadow-md">
+                           <Calendar
+                            locale={he}
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                                field.onChange(date);
+                                setIsStartDatePickerOpen(false);
+                            }}
+                            initialFocus
+                            fixedWeeks
+                          />
+                        </div>
+                      </div>
+                   )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -335,36 +344,44 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
                   <FormLabel>{paymentType === 'installments' ? 'תאריך תשלום הבא' : 'תאריך יעד'}</FormLabel>
-                   <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-right font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "dd/MM/yyyy")
-                          ) : (
-                            <span>בחר תאריך</span>
-                          )}
-                          <CalendarIcon className="me-auto h-4 w-4" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        locale={he}
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        fixedWeeks
-                      />
-                    </PopoverContent>
-                  </Popover>
+                   <FormControl>
+                    <Button
+                      type="button"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                      onClick={() => {
+                        setIsStartDatePickerOpen(false);
+                        setIsDueDatePickerOpen(!isDueDatePickerOpen);
+                      }}
+                    >
+                      {field.value ? (
+                        format(field.value, "dd/MM/yyyy")
+                      ) : (
+                        <span>בחר תאריך</span>
+                      )}
+                      <CalendarIcon className="me-auto h-4 w-4" />
+                    </Button>
+                  </FormControl>
+                  {isDueDatePickerOpen && (
+                     <div className="relative">
+                       <div className="absolute z-20 w-full bg-background rounded-md border shadow-md">
+                          <Calendar
+                            locale={he}
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                                field.onChange(date);
+                                setIsDueDatePickerOpen(false);
+                            }}
+                            initialFocus
+                            fixedWeeks
+                          />
+                       </div>
+                     </div>
+                   )}
                   <FormMessage />
                 </FormItem>
               )}
