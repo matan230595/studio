@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet, Wallet, Repeat, Calendar } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet, Wallet, Repeat, Calendar, FileText, BanknoteIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,12 +56,16 @@ const spreadsheetSchema = z.object({
     creditor: z.object({
       name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים."),
     }),
+    description: z.string().optional().nullable(),
     amount: z.coerce.number().positive("הסכום חייב להיות חיובי."),
+    originalAmount: z.coerce.number().positive("הסכום חייב להיות חיובי.").optional().nullable(),
     interestRate: z.coerce.number().min(0).optional().nullable(),
     status: z.enum(['active', 'paid', 'late']),
+    startDate: z.string().refine(val => !val || !isNaN(Date.parse(val)) || /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "תאריך לא חוקי (YYYY-MM-DD)" }),
     dueDate: z.string().refine(val => !isNaN(Date.parse(val)) || /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "תאריך לא חוקי (YYYY-MM-DD)" }),
     paymentType: z.enum(['single', 'installments']),
     nextPaymentAmount: z.coerce.number().min(0).optional().nullable(),
+    paymentMethod: z.string().optional().nullable(),
   })),
 });
 
@@ -165,20 +169,19 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   }
 
   const handleExport = () => {
-    const dataToExport = transactions.map(t => {
-      const commonData: {[key: string]: any} = {
+    const dataToExport = transactions.map(t => ({
         'שם': t.creditor.name,
-        'סכום': t.amount,
+        'תיאור': t.description,
+        'סכום נוכחי': t.amount,
+        'סכום מקורי': t.originalAmount,
+        'תאריך התחלה': t.startDate,
         'תאריך יעד': t.dueDate,
         'סטטוס': statusMap[t.status].text,
-      };
-      if (transactionType === 'loan') {
-        commonData['סוג תשלום'] = t.paymentType === 'single' ? 'חד פעמי' : 'תשלומים';
-        commonData['ריבית (%)'] = t.interestRate ?? 0;
-        commonData['החזר חודשי'] = t.nextPaymentAmount ?? '';
-      }
-      return commonData;
-    });
+        'סוג תשלום': t.paymentType === 'single' ? 'חד פעמי' : 'תשלומים',
+        'ריבית (%)': t.interestRate ?? '',
+        'החזר חודשי': t.nextPaymentAmount ?? '',
+        'אמצעי תשלום': t.paymentMethod,
+    }));
     
     const today = new Date().toISOString().slice(0, 10);
     exportToCsv(`${entityNamePlural}_${today}.csv`, dataToExport);
@@ -211,7 +214,8 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
           <TableHeader>
             <TableRow>
               <TableHead>{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
-              <TableHead className="hidden sm:table-cell">{transactionType === 'loan' ? 'סכום קרן' : 'סכום'}</TableHead>
+              <TableHead className="hidden sm:table-cell">סכום נוכחי</TableHead>
+              <TableHead className="hidden lg:table-cell">סכום מקורי</TableHead>
               {transactionType === 'loan' && <TableHead className="hidden md:table-cell">החזר חודשי</TableHead>}
               {transactionType === 'loan' && <TableHead className="hidden sm:table-cell">ריבית</TableHead>}
               <TableHead className="hidden md:table-cell">תאריך יעד</TableHead>
@@ -226,9 +230,11 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
               <TableRow key={transaction.id} className="group">
                 <TableCell>
                   <div className="font-medium">{transaction.creditor.name}</div>
+                  <div className="text-xs text-muted-foreground hidden sm:block">{transaction.description}</div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">₪{transaction.amount.toLocaleString('he-IL')}</TableCell>
-                 {transactionType === 'loan' && <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden lg:table-cell">{transaction.originalAmount ? `₪${transaction.originalAmount.toLocaleString('he-IL')}` : '-'}</TableCell>
+                {transactionType === 'loan' && <TableCell className="hidden md:table-cell">
                   {transaction.paymentType === 'installments' && transaction.nextPaymentAmount ? `₪${transaction.nextPaymentAmount.toLocaleString('he-IL')}` : '-'}
                 </TableCell>}
                 {transactionType === 'loan' && <TableCell className="hidden sm:table-cell">{transaction.interestRate !== undefined ? `${transaction.interestRate}%` : '-'}</TableCell>}
@@ -292,8 +298,9 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
             <div className="flex items-start gap-4">
               <Wallet className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">{transactionType === 'loan' ? 'סכום נותר' : 'סכום החוב'}</p>
+                <p className="text-sm font-medium text-muted-foreground">סכום נוכחי</p>
                 <p className="font-headline text-2xl font-bold">₪{transaction.amount.toLocaleString('he-IL')}</p>
+                 {transaction.originalAmount && transaction.originalAmount > transaction.amount && <p className="text-xs text-muted-foreground">מתוך ₪{transaction.originalAmount.toLocaleString('he-IL')}</p>}
               </div>
             </div>
             {transactionType === 'loan' && (
@@ -304,9 +311,18 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                   <p className="text-sm">
                     {transaction.paymentType === 'single' ? 'תשלום חד פעמי' : `תשלומים`}
                     {transaction.paymentType === 'installments' && transaction.nextPaymentAmount && (
-                      <span className="text-muted-foreground"> (₪${transaction.nextPaymentAmount.toLocaleString('he-IL')})</span>
+                      <span className="text-muted-foreground"> (₪{transaction.nextPaymentAmount.toLocaleString('he-IL')})</span>
                     )}
                   </p>
+                </div>
+              </div>
+            )}
+             {transaction.description && (
+              <div className="flex items-start gap-4">
+                <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">הערות</p>
+                  <p className="text-sm text-muted-foreground">{transaction.description}</p>
                 </div>
               </div>
             )}
@@ -349,9 +365,9 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-[200px]">{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
-                                    <TableHead>{transactionType === 'loan' ? 'סכום קרן' : 'סכום'}</TableHead>
+                                    <TableHead>סכום נוכחי</TableHead>
+                                    <TableHead>סכום מקורי</TableHead>
                                     {transactionType === 'loan' && <TableHead>החזר חודשי</TableHead>}
-                                    {transactionType === 'loan' && <TableHead>ריבית (%)</TableHead>}
                                     <TableHead>תאריך יעד</TableHead>
                                     <TableHead>סטטוס</TableHead>
                                 </TableRow>
@@ -367,11 +383,11 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                                             <Input type="number" {...form.register(`transactions.${index}.amount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
                                             {form.formState.errors.transactions?.[index]?.amount && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.amount?.message}</p>}
                                         </TableCell>
+                                        <TableCell className="p-1">
+                                            <Input type="number" {...form.register(`transactions.${index}.originalAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
+                                        </TableCell>
                                         {transactionType === 'loan' && <TableCell className="p-1">
                                             <Input type="number" {...form.register(`transactions.${index}.nextPaymentAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
-                                        </TableCell>}
-                                        {transactionType === 'loan' && <TableCell className="p-1">
-                                            <Input type="number" step="0.1" {...form.register(`transactions.${index}.interestRate`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
                                         </TableCell>}
                                         <TableCell className="p-1">
                                             <Input type="date" {...form.register(`transactions.${index}.dueDate`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
@@ -410,7 +426,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   }
   
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
       <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight">

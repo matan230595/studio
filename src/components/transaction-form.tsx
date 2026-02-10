@@ -15,32 +15,29 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Transaction } from "@/lib/data";
 
-const formSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("debt"),
+const formSchema = z.object({
+    type: z.enum(['debt', 'loan']),
     creditorName: z.string().min(2, { message: "שם הנושה חייב להכיל לפחות 2 תווים." }),
+    description: z.string().optional(),
     amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
+    originalAmount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }).optional(),
+    startDate: z.date().optional(),
     dueDate: z.date({ required_error: "יש לבחור תאריך יעד." }),
-    paymentType: z.enum(['single', 'installments']),
-  }),
-  z.object({
-    type: z.literal("loan"),
-    creditorName: z.string().min(2, { message: "שם המלווה חייב להכיל לפחות 2 תווים." }),
-    amount: z.coerce.number().positive({ message: "סכום הקרן חייב להיות מספר חיובי." }),
     interestRate: z.coerce.number().min(0, { message: "הריבית לא יכולה להיות שלילית." }).optional(),
-    paymentType: z.enum(['single', 'installments'], { required_error: 'יש לבחור אופן תשלום.'}),
+    paymentType: z.enum(['single', 'installments']),
     nextPaymentAmount: z.coerce.number().positive().optional(),
-    dueDate: z.date({ required_error: "יש לבחור תאריך יעד/תשלום הבא." }),
-  })
-]).refine(data => {
+    paymentMethod: z.string().optional(),
+}).refine(data => {
     if (data.type === 'loan' && data.paymentType === 'installments' && (data.nextPaymentAmount === undefined || data.nextPaymentAmount <= 0)) {
         return false;
     }
@@ -58,14 +55,16 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
     defaultValues: transaction ? (
       {
         ...transaction,
+        creditorName: transaction.creditor.name,
+        amount: transaction.amount,
+        originalAmount: transaction.originalAmount,
+        description: transaction.description,
+        startDate: transaction.startDate ? new Date(transaction.startDate) : undefined,
         dueDate: new Date(transaction.dueDate),
-        amount: transaction.amount ?? undefined,
-        creditorName: transaction.creditor.name ?? "",
-        ...(transaction.type === 'loan' && {
-          paymentType: transaction.paymentType,
-          interestRate: transaction.interestRate ?? 0,
-          nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
-        })
+        interestRate: transaction.interestRate,
+        paymentType: transaction.paymentType,
+        paymentMethod: transaction.paymentMethod,
+        nextPaymentAmount: transaction.nextPaymentAmount,
       }
     ) : {
       type: fixedType || "debt",
@@ -78,31 +77,26 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
 
   React.useEffect(() => {
     if (transaction) {
-      const defaultValues = {
+      form.reset({
         ...transaction,
+        creditorName: transaction.creditor.name,
+        amount: transaction.amount,
+        originalAmount: transaction.originalAmount,
+        description: transaction.description,
+        startDate: transaction.startDate ? new Date(transaction.startDate) : undefined,
         dueDate: new Date(transaction.dueDate),
-        amount: transaction.amount ?? undefined,
-        creditorName: transaction.creditor.name ?? "",
-        ...(transaction.type === 'loan' ? {
-          paymentType: transaction.paymentType,
-          interestRate: transaction.interestRate ?? 0,
-          nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
-        } : { paymentType: transaction.paymentType || 'single'})
-      };
-      // @ts-ignore
-      form.reset(defaultValues);
+        interestRate: transaction.interestRate,
+        paymentType: transaction.paymentType,
+        paymentMethod: transaction.paymentMethod,
+        nextPaymentAmount: transaction.nextPaymentAmount,
+      });
     } else {
       form.reset({
         type: fixedType || 'debt',
-        creditorName: "",
-        amount: undefined,
-        dueDate: undefined,
-        paymentType: fixedType === 'loan' ? undefined : 'single',
-        interestRate: undefined,
-        nextPaymentAmount: undefined,
+        paymentType: 'single',
       });
     }
-  }, [transaction, fixedType, form.reset]);
+  }, [transaction, fixedType, form]);
   
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newOrUpdatedTransaction: Transaction = {
@@ -111,14 +105,16 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       creditor: {
         name: values.creditorName,
       },
-      dueDate: format(values.dueDate, 'yyyy-MM-dd'),
       type: values.type,
       amount: values.amount,
-      paymentType: values.type === 'loan' ? values.paymentType : 'single',
-      ...(values.type === 'loan' && {
-        interestRate: values.interestRate,
-        nextPaymentAmount: values.nextPaymentAmount
-      })
+      originalAmount: values.originalAmount || values.amount,
+      description: values.description,
+      startDate: values.startDate ? format(values.startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+      dueDate: format(values.dueDate, 'yyyy-MM-dd'),
+      paymentType: values.paymentType,
+      paymentMethod: values.paymentMethod,
+      interestRate: values.interestRate,
+      nextPaymentAmount: values.nextPaymentAmount
     };
     onFinished(newOrUpdatedTransaction);
   }
@@ -138,13 +134,10 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                     <RadioGroup
                     onValueChange={(value) => {
                         field.onChange(value);
-                        const currentValues = form.getValues();
                         form.reset({
-                            ...currentValues,
+                            ...form.getValues(),
                             type: value as 'debt' | 'loan',
-                            paymentType: value === 'debt' ? 'single' : currentValues.paymentType,
-                            interestRate: undefined,
-                            nextPaymentAmount: undefined,
+                            paymentType: value === 'debt' ? 'single' : 'single',
                         });
                     }}
                     defaultValue={field.value}
@@ -165,9 +158,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                     </FormItem>
                     </RadioGroup>
                 </FormControl>
-                <FormDescription>
-                    {type === 'debt' ? 'חוב עבור שירות, מוצר או חשבון.' : 'הלוואה היא כסף שלווית ותצטרך להחזיר, לעתים קרובות עם ריבית.'}
-                </FormDescription>
                 <FormMessage />
                 </FormItem>
             )}
@@ -187,6 +177,20 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
             </FormItem>
           )}
         />
+        
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>תיאור (אופציונלי)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="פרטים נוספים על ההתחייבות..." {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
@@ -194,7 +198,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{type === 'loan' ? 'סכום הקרן' : 'סכום החוב'} (₪)</FormLabel>
+                  <FormLabel>{type === 'loan' ? 'סכום נותר לתשלום' : 'סכום החוב'} (₪)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="5,000" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -202,25 +206,40 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                 </FormItem>
               )}
             />
-            {type === 'loan' && (
-              <FormField
-                control={form.control}
-                name="interestRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ריבית שנתית (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="originalAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>סכום מקורי (אופציונלי)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="5,000" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
         </div>
-
+        
         {type === 'loan' && (
-          <FormField
+             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                    control={form.control}
+                    name="interestRate"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>ריבית שנתית (%)</FormLabel>
+                        <FormControl>
+                        <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+        )}
+
+        <FormField
             control={form.control}
             name="paymentType"
             render={({ field }) => (
@@ -229,7 +248,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     className="flex space-x-4 space-x-reverse"
                   >
                     <FormItem className="flex items-center space-x-2 space-x-reverse">
@@ -249,16 +268,32 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                 <FormMessage />
               </FormItem>
             )}
-          />
+        />
+        
+        {paymentType === 'installments' && (
+             <FormField
+                control={form.control}
+                name="nextPaymentAmount"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>החזר חודשי (₪)</FormLabel>
+                    <FormControl>
+                    <Input type="number" placeholder="500" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
         )}
 
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField
+           <FormField
               control={form.control}
-              name="dueDate"
+              name="startDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
-                  <FormLabel>{type === 'loan' && paymentType === 'installments' ? 'תאריך תשלום הבא' : 'תאריך יעד'}</FormLabel>
+                  <FormLabel>תאריך התחלה</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -291,22 +326,68 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                 </FormItem>
               )}
             />
-            {type === 'loan' && paymentType === 'installments' && (
-                <FormField
-                  control={form.control}
-                  name="nextPaymentAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>החזר חודשי (₪)</FormLabel>
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col pt-2">
+                  <FormLabel>{paymentType === 'installments' ? 'תאריך תשלום הבא' : 'תאריך יעד'}</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <FormControl>
-                        <Input type="number" placeholder="500" {...field} value={field.value ?? ''} />
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-right font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>בחר תאריך</span>
+                          )}
+                          <CalendarIcon className="me-auto h-4 w-4" />
+                        </Button>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            )}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
         </div>
+        <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>אמצעי תשלום</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                    <SelectTrigger>
+                    <SelectValue placeholder="בחר אמצעי תשלום" />
+                    </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    <SelectItem value="Bank Transfer">העברה בנקאית</SelectItem>
+                    <SelectItem value="Credit Card">כרטיס אשראי</SelectItem>
+                    <SelectItem value="Cash">מזומן</SelectItem>
+                    <SelectItem value="Other">אחר</SelectItem>
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
         <Button type="submit" className="w-full">
             <PlusCircle className="ms-2 h-4 w-4" />
             {transaction ? `עדכן ${transaction.type === 'loan' ? 'הלוואה' : 'חוב'}` : `הוסף ${type === 'loan' ? 'הלוואה' : 'חוב'}`}

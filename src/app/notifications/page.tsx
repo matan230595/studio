@@ -9,10 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { differenceInDays, formatDistanceToNowStrict } from 'date-fns';
 import { he } from 'date-fns/locale';
 
-const activityIcons = {
+const activityIcons: Record<string, React.ReactElement> = {
     paid: <BadgeCheck className="h-5 w-5 text-green-500" />,
     late: <AlertTriangle className="h-5 w-5 text-red-500" />,
-    active: <Banknote className="h-5 w-5 text-blue-500" />,
+    debt: <Banknote className="h-5 w-5 text-blue-500" />,
+    loan: <Landmark className="h-5 w-5 text-purple-500" />,
     default: <Bell className="h-5 w-5 text-muted-foreground" />,
 };
 
@@ -20,19 +21,19 @@ const getActivityInfo = (transaction: Transaction) => {
     switch(transaction.status) {
         case 'paid':
             return {
-                description: `התשלום בוצע עבור ${transaction.creditor.name}`,
+                description: `התשלום בסך ₪${transaction.amount.toLocaleString()} בוצע עבור ${transaction.creditor.name}`,
                 icon: activityIcons.paid
             };
         case 'late':
             return {
-                description: `איחור בתשלום עבור ${transaction.creditor.name}`,
+                description: `איחור בתשלום בסך ₪${transaction.amount.toLocaleString()} עבור ${transaction.creditor.name}`,
                 icon: activityIcons.late
             };
         case 'active':
         default:
              return {
                 description: `התחייבות חדשה נוצרה מול ${transaction.creditor.name}`,
-                icon: activityIcons.active
+                icon: activityIcons[transaction.type] || activityIcons.default
             };
     }
 };
@@ -60,7 +61,7 @@ export default function NotificationsPage() {
             })
             .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-        const activities = [...transactions].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        const activities = [...transactions].sort((a, b) => (b.startDate ? new Date(b.startDate).getTime() : 0) - (a.startDate ? new Date(a.startDate).getTime() : 0));
         
         return { upcomingReminders: reminders, sortedActivities: activities };
     }, [transactions]);
@@ -101,10 +102,10 @@ export default function NotificationsPage() {
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
       <header>
         <h1 className="font-headline text-3xl font-bold tracking-tight">
-          התראות ותזכורות
+          התראות ופיד פעילות
         </h1>
         <p className="text-muted-foreground">
-          תזכורות ותראות שיעזרו לך להישאר מעודכן.
+          כל העדכונים והתזכורות במקום אחד כדי לעזור לך להישאר מעודכן.
         </p>
       </header>
 
@@ -116,13 +117,13 @@ export default function NotificationsPage() {
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
             {upcomingReminders.length > 0 ? upcomingReminders.map((transaction) => {
                 const dueDate = new Date(transaction.dueDate);
                 const daysUntilDue = formatDistanceToNowStrict(dueDate, { addSuffix: true, locale: he });
 
                 return (
-                    <div key={`reminder-${transaction.id}`} className="flex items-center gap-4 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4">
+                    <div key={`reminder-${transaction.id}`} className="flex items-center gap-4 rounded-lg border-r-4 border-yellow-500 bg-muted/50 p-4">
                         <div className="bg-yellow-500/20 rounded-full p-2 hidden sm:block">
                             <Clock className="h-5 w-5 text-yellow-600" />
                         </div>
@@ -134,7 +135,7 @@ export default function NotificationsPage() {
                                 סכום: ₪{(transaction.nextPaymentAmount || transaction.amount).toLocaleString('he-IL')}
                             </p>
                         </div>
-                        <div className="text-sm font-semibold text-yellow-700 text-end">
+                        <div className="text-sm font-semibold text-yellow-700 text-end shrink-0">
                             {daysUntilDue}
                         </div>
                     </div>
@@ -151,9 +152,9 @@ export default function NotificationsPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>פיד פעילות</CardTitle>
+          <CardTitle>פיד פעילות אחרונות</CardTitle>
           <CardDescription>
-            {sortedActivities.length > 0 ? `מציג את ${sortedActivities.length} הפעילויות האחרונות.` : 'אין פעילויות חדשות.'}
+            {sortedActivities.length > 0 ? `מציג את הפעילויות האחרונות במערכת.` : 'אין פעילויות חדשות.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -161,8 +162,8 @@ export default function NotificationsPage() {
             {sortedActivities.length > 0 ? sortedActivities.map((transaction) => {
                 const { description, icon } = getActivityInfo(transaction);
                 return (
-                    <div key={transaction.id} className="flex items-center gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors">
-                        <div className="bg-muted rounded-full p-2">
+                    <div key={transaction.id} className="flex items-start gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                        <div className="bg-muted rounded-full p-2 mt-1">
                            {icon}
                         </div>
                         <div className="flex-grow">
@@ -170,7 +171,7 @@ export default function NotificationsPage() {
                                 {description}
                             </p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{transaction.dueDate}</span>
+                                <span>{formatDistanceToNowStrict(new Date(transaction.startDate || transaction.dueDate), { addSuffix: true, locale: he })}</span>
                                 &middot;
                                 <div className="flex items-center gap-1">
                                     {transaction.type === 'loan' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}

@@ -101,7 +101,7 @@ export default function LoginPage() {
               {isLoginView ? 'הזן את פרטיך כדי להתחבר לחשבונך' : 'צור חשבון חדש כדי להתחיל'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 text-right">
             <div className="space-y-2">
               <Label htmlFor="email">אימייל</Label>
               <Input
@@ -120,7 +120,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 required
-                value={email}
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
@@ -129,7 +129,7 @@ export default function LoginPage() {
               <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-start text-sm text-destructive">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
+                  <div className="flex-1 text-right">
                     <h4 className="font-bold">{error.title}</h4>
                     <p className="mt-1">{error.message}</p>
                   </div>

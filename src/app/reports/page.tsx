@@ -20,11 +20,12 @@ export default function ReportsPage() {
 
     const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
-    const { barChartData, pieChartData } = React.useMemo(() => {
-        if (!transactions) return { barChartData: [], pieChartData: [] };
+    const { barChartData, pieChartStatusData, pieChartTypeData } = React.useMemo(() => {
+        if (!transactions) return { barChartData: [], pieChartStatusData: [], pieChartTypeData: [] };
         
-        const debtByCreditor = transactions
-            .filter(t => t.status !== 'paid')
+        const activeTransactions = transactions.filter(t => t.status !== 'paid');
+
+        const debtByCreditor = activeTransactions
             .reduce((acc, curr) => {
                 const creditor = curr.creditor.name;
                 if (!acc[creditor]) {
@@ -39,8 +40,18 @@ export default function ReportsPage() {
             total,
         })).sort((a, b) => b.total - a.total);
 
-        const typeData = transactions
-            .filter((t) => t.status !== "paid")
+        const statusData = transactions.reduce((acc, curr) => {
+                acc[curr.status] = (acc[curr.status] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+
+        const pieStatusData = [
+            { name: "פעילים", value: statusData.active || 0, fill: "var(--color-chart-1)" },
+            { name: "באיחור", value: statusData.late || 0, fill: "var(--color-chart-2)" },
+            { name: "שולמו", value: statusData.paid || 0, fill: "var(--color-chart-3)" },
+        ].filter(d => d.value > 0);
+
+        const typeData = activeTransactions
             .reduce(
             (acc, curr) => {
                 acc[curr.type] += curr.amount;
@@ -49,48 +60,36 @@ export default function ReportsPage() {
             { debt: 0, loan: 0 }
             );
 
-        const pieData = [
-            { type: "חובות", amount: typeData.debt, fill: "var(--color-chart-2)" },
-            { type: "הלוואות", amount: typeData.loan, fill: "var(--color-chart-4)" },
-        ].filter(d => d.amount > 0);
+        const pieTypeData = [
+            { name: "חובות", value: typeData.debt, fill: "hsl(var(--chart-4))" },
+            { name: "הלוואות", value: typeData.loan, fill: "hsl(var(--chart-5))" },
+        ].filter(d => d.value > 0);
 
-        return { barChartData: barData, pieChartData: pieData };
+
+        return { barChartData: barData, pieChartStatusData: pieStatusData, pieChartTypeData: pieTypeData };
     }, [transactions]);
     
-    const pieChartConfig = {
-      amount: {
-        label: "סכום",
-      },
-      חובות: {
-        label: "חובות",
-        color: "hsl(var(--chart-2))",
-      },
-      הלוואות: {
-        label: "הלוואות",
-        color: "hsl(var(--chart-4))",
-      },
-    }
-
-    if (isLoading) {
-        return (
-            <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
-                <header>
-                    <Skeleton className="h-9 w-24" />
-                    <Skeleton className="h-5 w-80 mt-2" />
-                </header>
-                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-                    <Card><CardHeader><Skeleton className="h-7 w-40" /><Skeleton className="h-5 w-72 mt-2" /></CardHeader><CardContent><Skeleton className="h-[400px] w-full" /></CardContent></Card>
-                    <Card><CardHeader><Skeleton className="h-7 w-40" /><Skeleton className="h-5 w-72 mt-2" /></CardHeader><CardContent><Skeleton className="h-[400px] w-full" /></CardContent></Card>
-                </div>
-            </div>
-        )
-    }
+  if (isLoading) {
+      return (
+          <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+              <header>
+                  <Skeleton className="h-9 w-24" />
+                  <Skeleton className="h-5 w-80 mt-2" />
+              </header>
+              <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+                  <Card><CardHeader><Skeleton className="h-7 w-40" /><Skeleton className="h-5 w-72 mt-2" /></CardHeader><CardContent><Skeleton className="h-[400px] w-full" /></CardContent></Card>
+                  <Card><CardHeader><Skeleton className="h-7 w-40" /><Skeleton className="h-5 w-72 mt-2" /></CardHeader><CardContent><Skeleton className="h-[400px] w-full" /></CardContent></Card>
+              </div>
+              <Card><CardHeader><Skeleton className="h-7 w-40" /><Skeleton className="h-5 w-72 mt-2" /></CardHeader><CardContent><Skeleton className="h-[400px] w-full" /></CardContent></Card>
+          </div>
+      )
+  }
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
       <header>
         <h1 className="font-headline text-3xl font-bold tracking-tight">
-          דוחות
+          דוחות וניתוחים
         </h1>
         <p className="text-muted-foreground">
           צפה בדוחות וניתוחים על מצב ההתחייבויות שלך.
@@ -99,39 +98,35 @@ export default function ReportsPage() {
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
         <Card>
             <CardHeader>
-            <CardTitle>חובות לפי נושה</CardTitle>
-            <CardDescription>ניתוח סך החובות הפתוחים לכל גורם, מהגבוה לנמוך.</CardDescription>
+              <CardTitle>התפלגות התחייבויות לפי סטטוס</CardTitle>
+              <CardDescription>כמות ההתחייבויות בכל סטטוס: פעיל, באיחור או שולם.</CardDescription>
             </CardHeader>
             <CardContent>
-            {barChartData.length > 0 ? (
-                 <ChartContainer config={{
-                    total: {
-                    label: "סך חוב",
-                    color: "hsl(var(--primary))",
-                    },
-                }} className="h-[400px] w-full">
-                <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }} layout="vertical">
-                    <CartesianGrid horizontal={false} />
-                    <XAxis type="number" dataKey="total" />
-                    <YAxis 
-                        dataKey="name" 
-                        type="category"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        width={100}
-                        tickFormatter={(value) => value.slice(0, 15)}
-                    />
-                    <Tooltip 
-                        cursor={false} 
-                        content={<ChartTooltipContent indicator="dot" />}
-                    />
-                    <Bar dataKey="total" fill="var(--color-total)" radius={5} />
-                </BarChart>
-            </ChartContainer>
-            ) : (
-                 <div className="h-[400px] flex items-center justify-center text-muted-foreground">אין נתונים להצגה</div>
-            )}
+                {pieChartStatusData.length > 0 ? (
+                    <ChartContainer config={{}} className="h-[400px] w-full">
+                        <PieChart>
+                          <Tooltip content={<ChartTooltipContent hideLabel />} />
+                          <Pie data={pieChartStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                              const RADIAN = Math.PI / 180;
+                              const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                              return (
+                                <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
+                                  {`${(percent * 100).toFixed(0)}%`}
+                                </text>
+                              );
+                            }}>
+                            {pieChartStatusData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Legend content={<ChartLegendContent />} />
+                        </PieChart>
+                    </ChartContainer>
+                ): (
+                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">אין נתונים להצגה</div>
+                )}
             </CardContent>
         </Card>
         <Card>
@@ -140,13 +135,15 @@ export default function ReportsPage() {
             <CardDescription>השוואה ויזואלית בין סך החובות לסך ההלוואות הפעילים.</CardDescription>
             </CardHeader>
             <CardContent>
-                {pieChartData.length > 0 ? (
-                    <ChartContainer config={pieChartConfig} className="h-[400px] w-full">
+                {pieChartTypeData.length > 0 ? (
+                    <ChartContainer config={{}} className="h-[400px] w-full">
                         <PieChart>
-                        <Tooltip content={<ChartTooltipContent hideLabel />} />
-                            <Pie data={pieChartData} dataKey="amount" nameKey="type" cx="50%" cy="50%" innerRadius={60} strokeWidth={5}>
-                            {pieChartData.map((entry) => (
-                                <Cell key={entry.type} fill={entry.fill} />
+                        <Tooltip formatter={(value, name) => [`₪${(value as number).toLocaleString()}`, name]} content={<ChartTooltipContent hideLabel />} />
+                            <Pie data={pieChartTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5}
+                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                            >
+                            {pieChartTypeData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.fill} />
                             ))}
                             </Pie>
                         <Legend content={<ChartLegendContent />} />
@@ -158,6 +155,44 @@ export default function ReportsPage() {
             </CardContent>
         </Card>
       </div>
+      <Card>
+          <CardHeader>
+          <CardTitle>חובות פתוחים לפי נושה</CardTitle>
+          <CardDescription>ניתוח סך החובות הפתוחים לכל גורם, מהגבוה לנמוך.</CardDescription>
+          </CardHeader>
+          <CardContent>
+          {barChartData.length > 0 ? (
+                <ChartContainer config={{
+                  total: {
+                  label: "סך חוב",
+                  color: "hsl(var(--primary))",
+                  },
+              }} className="h-[400px] w-full">
+              <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }} layout="vertical">
+                  <CartesianGrid horizontal={false} />
+                  <XAxis type="number" dataKey="total" tickFormatter={(value) => `₪${Number(value).toLocaleString()}`} />
+                  <YAxis 
+                      dataKey="name" 
+                      type="category"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      width={100}
+                      tickFormatter={(value) => value.slice(0, 15)}
+                  />
+                  <Tooltip 
+                      cursor={false}
+                      formatter={(value) => `₪${Number(value).toLocaleString()}`}
+                      content={<ChartTooltipContent indicator="dot" />}
+                  />
+                  <Bar dataKey="total" fill="var(--color-total)" radius={5} />
+              </BarChart>
+          </ChartContainer>
+          ) : (
+                <div className="h-[400px] flex items-center justify-center text-muted-foreground">אין נתונים להצגה</div>
+          )}
+          </CardContent>
+      </Card>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { Globe, Mail, Bell } from 'lucide-react';
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -32,11 +33,14 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-notifications" className="text-base">התראות באימייל</Label>
-              <p className="text-sm text-muted-foreground">
-                קבל סיכומים והתראות חשובות לכתובת האימייל שלך.
-              </p>
+            <div className='flex items-center gap-4'>
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <div className="space-y-0.5">
+                <Label htmlFor="email-notifications" className="text-base">התראות באימייל</Label>
+                <p className="text-sm text-muted-foreground">
+                  קבל סיכומים והתראות חשובות לכתובת האימייל שלך.
+                </p>
+              </div>
             </div>
             <Switch
               id="email-notifications"
@@ -44,20 +48,45 @@ export default function SettingsPage() {
             />
           </div>
           <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="push-notifications" className="text-base">התראות דחיפה (Push)</Label>
-               <p className="text-sm text-muted-foreground">
-                קבל התראות בזמן אמת ישירות למכשיר שלך.
-              </p>
+            <div className='flex items-center gap-4'>
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <div className="space-y-0.5">
+                <Label htmlFor="push-notifications" className="text-base">התראות דחיפה (Push)</Label>
+                <p className="text-sm text-muted-foreground">
+                  קבל התראות בזמן אמת ישירות למכשיר שלך. (בקרוב)
+                </p>
+              </div>
             </div>
             <Switch
               id="push-notifications"
+              disabled
             />
           </div>
         </CardContent>
         <CardFooter className="border-t pt-6">
             <Button onClick={handleSaveSettings}>שמור הגדרות</Button>
         </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>שפה ואזור</CardTitle>
+          <CardDescription>נהל את העדפות השפה והמטבע.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+             <div className='flex items-center gap-4'>
+              <Globe className="h-5 w-5 text-muted-foreground" />
+              <div className="space-y-0.5">
+                <Label htmlFor="language" className="text-base">שפה</Label>
+                <p className="text-sm text-muted-foreground">
+                  השפה המוצגת במערכת.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" disabled>עברית</Button>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

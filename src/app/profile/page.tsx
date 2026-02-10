@@ -48,13 +48,13 @@ export default function ProfilePage() {
           פרופיל משתמש
         </h1>
         <p className="text-muted-foreground">
-          פרטי הפרופיל שלך כפי שמופיעים בגוגל.
+          פרטי הפרופיל שלך כפי שמופיעים במערכת.
         </p>
       </header>
       <Card>
         <CardHeader>
           <CardTitle>פרטי משתמש</CardTitle>
-          <CardDescription>לא ניתן לערוך פרטים אלו, הם מסונכרנים מחשבון הגוגל שלך.</CardDescription>
+          <CardDescription>לא ניתן לערוך פרטים אלו, הם מסונכרנים מחשבון ההתחברות שלך.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
@@ -66,7 +66,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="name">שם מלא</Label>
-                    <Input id="name" value={user.displayName ?? ''} readOnly />
+                    <Input id="name" value={user.displayName ?? 'אין שם'} readOnly />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="email">כתובת אימייל</Label>
