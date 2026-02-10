@@ -40,7 +40,7 @@ export default function ReportsPage() {
         const barData = Object.entries(debtByCreditor).map(([name, total]) => ({
             name,
             total,
-        })).sort((a, b) => b.total - a.total); // Sort descending
+        })).sort((a, b) => b.total - a.total);
 
         // Data for Pie Chart (Status breakdown)
         const statusData = transactions.reduce((acc, curr) => {
