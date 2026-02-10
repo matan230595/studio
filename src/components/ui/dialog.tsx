@@ -43,8 +43,10 @@ const DialogContent = React.forwardRef<
       )}
       onPointerDownOutside={(e) => {
         const target = e.target as HTMLElement;
-        // This prevents the dialog from closing when interacting with other popovers, like the calendar.
-        if (target.closest('[data-radix-popper-content-wrapper]')) {
+        if (
+          target.closest("[data-radix-popper-content-wrapper]") ||
+          target.closest(".rdp")
+        ) {
           e.preventDefault();
         }
       }}
