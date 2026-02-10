@@ -25,12 +25,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import { format } from "date-fns"
+import { format, parse } from "date-fns"
 import { Transaction } from "@/lib/data"
 
 const dateStringSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "התאריך חייב להיות בפורמט YYYY-MM-DD")
+  .regex(/^\d{2}\/\d{2}\/\d{4}$/, "התאריך חייב להיות בפורמט DD/MM/YYYY")
 
 const formSchema = z
   .object({
@@ -89,11 +89,23 @@ export function TransactionForm({
   const type = form.watch("type")
   const paymentType = form.watch("paymentType")
 
+  const fromIsoDate = (isoDate: string | undefined): string => {
+      if (!isoDate) return "";
+      try {
+        const date = parse(isoDate, 'yyyy-MM-dd', new Date());
+        return format(date, 'dd/MM/yyyy');
+      } catch {
+        return isoDate;
+      }
+  };
+
   React.useEffect(() => {
     if (transaction) {
       form.reset({
         ...transaction,
         creditorName: transaction.creditor.name,
+        startDate: fromIsoDate(transaction.startDate),
+        dueDate: fromIsoDate(transaction.dueDate),
       })
     } else {
       const defaultDueDate = new Date()
@@ -109,13 +121,31 @@ export function TransactionForm({
         paymentType: "single",
         nextPaymentAmount: undefined,
         paymentMethod: undefined,
-        startDate: format(new Date(), "yyyy-MM-dd"),
-        dueDate: format(defaultDueDate, "yyyy-MM-dd"),
+        startDate: format(new Date(), "dd/MM/yyyy"),
+        dueDate: format(defaultDueDate, "dd/MM/yyyy"),
       })
     }
   }, [transaction, fixedType, form])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+     const toIsoDate = (dmyDate: string | undefined): string | undefined => {
+        if (!dmyDate) return undefined;
+        try {
+            const date = parse(dmyDate, 'dd/MM/yyyy', new Date());
+            return format(date, 'yyyy-MM-dd');
+        } catch {
+            return undefined;
+        }
+    }
+
+    const isoStartDate = toIsoDate(values.startDate);
+    const isoDueDate = toIsoDate(values.dueDate);
+    
+    if (!isoDueDate) {
+      console.error("Due date is invalid");
+      return;
+    }
+
     const newOrUpdatedTransaction: Transaction = {
       id:
         transaction?.id || `${values.type.charAt(0).toUpperCase()}${Date.now()}`,
@@ -127,8 +157,8 @@ export function TransactionForm({
       amount: values.amount,
       originalAmount: values.originalAmount || values.amount,
       description: values.description,
-      startDate: values.startDate || format(new Date(), "yyyy-MM-dd"),
-      dueDate: values.dueDate,
+      startDate: isoStartDate || format(new Date(), 'yyyy-MM-dd'),
+      dueDate: isoDueDate,
       paymentType: values.paymentType,
       paymentMethod: values.paymentMethod,
       interestRate: values.interestRate,
@@ -359,7 +389,7 @@ export function TransactionForm({
                 <FormLabel>תאריך התחלה</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="YYYY-MM-DD"
+                    placeholder="DD/MM/YYYY"
                     {...field}
                     value={field.value ?? ""}
                   />
@@ -380,7 +410,7 @@ export function TransactionForm({
                 </FormLabel>
                 <FormControl>
                    <Input
-                    placeholder="YYYY-MM-DD"
+                    placeholder="DD/MM/YYYY"
                     {...field}
                     value={field.value ?? ""}
                   />
