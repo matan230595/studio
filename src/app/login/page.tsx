@@ -120,7 +120,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 required
-                value={password}
+                value={email}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
