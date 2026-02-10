@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,13 +16,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Transaction } from "@/lib/data";
+
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "התאריך חייב להיות בפורמט YYYY-MM-DD");
 
 const formSchema = z.object({
     type: z.enum(['debt', 'loan']),
@@ -31,8 +29,8 @@ const formSchema = z.object({
     description: z.string().optional(),
     amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
     originalAmount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }).optional(),
-    startDate: z.date().optional(),
-    dueDate: z.date({ required_error: "יש לבחור תאריך יעד." }),
+    startDate: dateStringSchema.optional().or(z.literal('')),
+    dueDate: dateStringSchema.min(1, { message: "יש לבחור תאריך יעד." }),
     interestRate: z.coerce.number().min(0, { message: "הריבית לא יכולה להיות שלילית." }).optional(),
     paymentType: z.enum(['single', 'installments']),
     nextPaymentAmount: z.coerce.number().positive().optional(),
@@ -52,24 +50,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: transaction ? (
-      {
-        ...transaction,
-        creditorName: transaction.creditor.name,
-        amount: transaction.amount,
-        originalAmount: transaction.originalAmount,
-        description: transaction.description,
-        startDate: transaction.startDate ? new Date(transaction.startDate) : undefined,
-        dueDate: new Date(transaction.dueDate),
-        interestRate: transaction.interestRate,
-        paymentType: transaction.paymentType,
-        paymentMethod: transaction.paymentMethod,
-        nextPaymentAmount: transaction.nextPaymentAmount,
-      }
-    ) : {
-      type: fixedType || "debt",
-      paymentType: 'single',
-    },
   });
 
   const type = form.watch("type");
@@ -80,20 +60,23 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       form.reset({
         ...transaction,
         creditorName: transaction.creditor.name,
-        amount: transaction.amount,
-        originalAmount: transaction.originalAmount,
-        description: transaction.description,
-        startDate: transaction.startDate ? new Date(transaction.startDate) : undefined,
-        dueDate: new Date(transaction.dueDate),
-        interestRate: transaction.interestRate,
-        paymentType: transaction.paymentType,
-        paymentMethod: transaction.paymentMethod,
-        nextPaymentAmount: transaction.nextPaymentAmount,
       });
     } else {
+        const defaultDueDate = new Date();
+        defaultDueDate.setMonth(defaultDueDate.getMonth() + 1);
+
       form.reset({
         type: fixedType || 'debt',
+        creditorName: '',
+        description: '',
+        amount: undefined,
+        originalAmount: undefined,
+        interestRate: undefined,
         paymentType: 'single',
+        nextPaymentAmount: undefined,
+        paymentMethod: undefined,
+        startDate: format(new Date(), 'yyyy-MM-dd'),
+        dueDate: format(defaultDueDate, 'yyyy-MM-dd'),
       });
     }
   }, [transaction, fixedType, form]);
@@ -109,8 +92,8 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       amount: values.amount,
       originalAmount: values.originalAmount || values.amount,
       description: values.description,
-      startDate: values.startDate ? format(values.startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-      dueDate: format(values.dueDate, 'yyyy-MM-dd'),
+      startDate: values.startDate || format(new Date(), 'yyyy-MM-dd'),
+      dueDate: values.dueDate,
       paymentType: values.paymentType,
       paymentMethod: values.paymentMethod,
       interestRate: values.interestRate,
@@ -291,37 +274,11 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               control={form.control}
               name="startDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col pt-2">
+                <FormItem>
                   <FormLabel>תאריך התחלה</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full justify-start text-right font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                <span>בחר תאריך</span>
-                              )}
-                              <CalendarIcon className="me-auto h-4 w-4" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                            fixedWeeks
-                          />
-                        </PopoverContent>
-                    </Popover>
+                  <FormControl>
+                    <Input placeholder="YYYY-MM-DD" {...field} value={field.value ?? ''} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -330,37 +287,11 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               control={form.control}
               name="dueDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col pt-2">
+                <FormItem>
                   <FormLabel>{paymentType === 'installments' ? 'תאריך תשלום הבא' : 'תאריך יעד'}</FormLabel>
-                   <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full justify-start text-right font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                <span>בחר תאריך</span>
-                              )}
-                              <CalendarIcon className="me-auto h-4 w-4" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                            fixedWeeks
-                          />
-                        </PopoverContent>
-                    </Popover>
+                   <FormControl>
+                    <Input placeholder="YYYY-MM-DD" {...field} value={field.value ?? ''} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
