@@ -58,6 +58,7 @@ function Calendar({
         IconLeft: ({ ...props }) => <ChevronRight className="h-4 w-4" />, // RTL: Left icon is right chevron
         IconRight: ({ ...props }) => <ChevronLeft className="h-4 w-4" />, // RTL: Right icon is left chevron
       }}
+      fixedWeeks
       {...props}
     />
   )
