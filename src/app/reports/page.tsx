@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from "recharts"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ChartContainer, ChartTooltipContent, ChartLegendContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Transaction } from '@/lib/data';
@@ -26,6 +26,7 @@ export default function ReportsPage() {
         
         const activeTransactions = transactions.filter(t => t.status !== 'paid');
 
+        // Data for Bar Chart (Creditor breakdown)
         const debtByCreditor = activeTransactions
             .reduce((acc, curr) => {
                 const creditor = curr.creditor.name;
@@ -39,8 +40,9 @@ export default function ReportsPage() {
         const barData = Object.entries(debtByCreditor).map(([name, total]) => ({
             name,
             total,
-        })).sort((a, b) => b.total - a.total);
+        })).sort((a, b) => b.total - a.total); // Sort descending
 
+        // Data for Pie Chart (Status breakdown)
         const statusData = transactions.reduce((acc, curr) => {
                 acc[curr.status] = (acc[curr.status] || 0) + 1;
                 return acc;
@@ -52,6 +54,7 @@ export default function ReportsPage() {
             { name: "שולמו", value: statusData.paid || 0, fill: "hsl(var(--chart-3))" },
         ].filter(d => d.value > 0);
 
+        // Data for Pie Chart (Type breakdown)
         const typeData = activeTransactions
             .reduce(
             (acc, curr) => {
@@ -85,6 +88,13 @@ export default function ReportsPage() {
           </div>
       )
   }
+  
+  const renderEmptyState = (message: string) => (
+      <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
+          <Bell className="h-10 w-10 mb-2" />
+          <p>{message}</p>
+      </div>
+  );
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
@@ -104,7 +114,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
                 {pieChartStatusData.length > 0 ? (
-                    <ChartContainer config={{}} className="h-[400px] w-full">
+                    <ChartContainer config={{}} className="mx-auto aspect-square h-[350px]">
                         <PieChart>
                           <Tooltip content={<ChartTooltipContent hideLabel />} />
                           <Pie data={pieChartStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
@@ -119,18 +129,13 @@ export default function ReportsPage() {
                               );
                             }}>
                             {pieChartStatusData.map((entry) => (
-                                <Cell key={entry.name} fill={entry.fill} />
+                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <Legend content={<ChartLegendContent />} />
+                          <ChartLegend content={<ChartLegendContent />} />
                         </PieChart>
                     </ChartContainer>
-                ): (
-                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
-                        <Bell className="h-10 w-10 mb-2" />
-                        <p>אין נתונים להצגה</p>
-                    </div>
-                )}
+                ): renderEmptyState("אין נתונים להצגת התפלגות לפי סטטוס")}
             </CardContent>
         </Card>
         <Card>
@@ -140,7 +145,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
                 {pieChartTypeData.length > 0 ? (
-                    <ChartContainer config={{}} className="h-[400px] w-full">
+                    <ChartContainer config={{}} className="mx-auto aspect-square h-[350px]">
                         <PieChart>
                         <Tooltip formatter={(value) => [`₪${(value as number).toLocaleString()}`]} content={<ChartTooltipContent hideLabel />} />
                             <Pie data={pieChartTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5}
@@ -157,18 +162,13 @@ export default function ReportsPage() {
                               }}
                             >
                             {pieChartTypeData.map((entry) => (
-                                <Cell key={entry.name} fill={entry.fill} />
+                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                             ))}
                             </Pie>
-                        <Legend content={<ChartLegendContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
                         </PieChart>
                     </ChartContainer>
-                ): (
-                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
-                        <Bell className="h-10 w-10 mb-2" />
-                        <p>אין נתונים להצגה</p>
-                    </div>
-                )}
+                ): renderEmptyState("אין נתונים להצגת חלוקה לפי סוג")}
             </CardContent>
         </Card>
       </div>
@@ -185,15 +185,9 @@ export default function ReportsPage() {
                     color: "hsl(var(--primary))",
                   },
                 }} className="h-[400px] w-full">
-                <BarChart data={barChartData} layout="vertical" margin={{ left: 10 }}>
-                    <defs>
-                        <linearGradient id="fillTotal" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        </linearGradient>
-                    </defs>
+                <BarChart data={barChartData} layout="vertical" margin={{ right: 20, left: 10, top: 10, bottom: 10 }}>
                     <CartesianGrid horizontal={false} />
-                    <XAxis type="number" dataKey="total" tickFormatter={(value) => `₪${Number(value).toLocaleString()}`} />
+                    <XAxis type="number" dataKey="total" tickFormatter={(value) => `₪${Number(value) / 1000}k`} />
                     <YAxis 
                         dataKey="name" 
                         type="category"
@@ -201,22 +195,18 @@ export default function ReportsPage() {
                         axisLine={false}
                         tickMargin={8}
                         width={100}
-                        tickFormatter={(value) => value.slice(0, 15)}
+                        tickFormatter={(value) => value.length > 15 ? `${value.slice(0,15)}...` : value}
+                        reversed={true}
                     />
                     <Tooltip 
                         cursor={{fill: 'hsl(var(--accent))'}}
                         formatter={(value) => `₪${Number(value).toLocaleString()}`}
                         content={<ChartTooltipContent indicator="dot" />}
                     />
-                    <Bar dataKey="total" radius={[0, 4, 4, 0]} fill="url(#fillTotal)" />
+                    <Bar dataKey="total" fill="var(--color-total)" radius={[0, 4, 4, 0]} />
                 </BarChart>
             </ChartContainer>
-          ) : (
-                <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
-                    <Bell className="h-10 w-10 mb-2" />
-                    <p>אין נתונים להצגה</p>
-                </div>
-          )}
+          ) : renderEmptyState("אין נתונים להצגת התחייבויות לפי נושה")}
           </CardContent>
       </Card>
     </div>
