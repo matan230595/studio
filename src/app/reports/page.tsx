@@ -8,6 +8,7 @@ import { collection } from 'firebase/firestore';
 import type { Transaction } from '@/lib/data';
 import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Bell } from "lucide-react";
 
 export default function ReportsPage() {
     const { user } = useUser();
@@ -46,9 +47,9 @@ export default function ReportsPage() {
             }, {} as Record<string, number>);
 
         const pieStatusData = [
-            { name: "פעילים", value: statusData.active || 0, fill: "var(--color-chart-1)" },
-            { name: "באיחור", value: statusData.late || 0, fill: "var(--color-chart-2)" },
-            { name: "שולמו", value: statusData.paid || 0, fill: "var(--color-chart-3)" },
+            { name: "פעילים", value: statusData.active || 0, fill: "hsl(var(--chart-1))" },
+            { name: "באיחור", value: statusData.late || 0, fill: "hsl(var(--chart-2))" },
+            { name: "שולמו", value: statusData.paid || 0, fill: "hsl(var(--chart-3))" },
         ].filter(d => d.value > 0);
 
         const typeData = activeTransactions
@@ -106,7 +107,7 @@ export default function ReportsPage() {
                     <ChartContainer config={{}} className="h-[400px] w-full">
                         <PieChart>
                           <Tooltip content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={pieChartStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                          <Pie data={pieChartStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                               const RADIAN = Math.PI / 180;
                               const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                               const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -125,22 +126,35 @@ export default function ReportsPage() {
                         </PieChart>
                     </ChartContainer>
                 ): (
-                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">אין נתונים להצגה</div>
+                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
+                        <Bell className="h-10 w-10 mb-2" />
+                        <p>אין נתונים להצגה</p>
+                    </div>
                 )}
             </CardContent>
         </Card>
         <Card>
             <CardHeader>
-            <CardTitle>התפלגות לפי סוג</CardTitle>
+            <CardTitle>חלוקת התחייבויות לפי סוג</CardTitle>
             <CardDescription>השוואה ויזואלית בין סך החובות לסך ההלוואות הפעילים.</CardDescription>
             </CardHeader>
             <CardContent>
                 {pieChartTypeData.length > 0 ? (
                     <ChartContainer config={{}} className="h-[400px] w-full">
                         <PieChart>
-                        <Tooltip formatter={(value, name) => [`₪${(value as number).toLocaleString()}`, name]} content={<ChartTooltipContent hideLabel />} />
+                        <Tooltip formatter={(value) => [`₪${(value as number).toLocaleString()}`]} content={<ChartTooltipContent hideLabel />} />
                             <Pie data={pieChartTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} strokeWidth={5}
-                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                            label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                const RADIAN = Math.PI / 180;
+                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                return (
+                                  <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
+                                    {`${(percent * 100).toFixed(0)}%`}
+                                  </text>
+                                );
+                              }}
                             >
                             {pieChartTypeData.map((entry) => (
                                 <Cell key={entry.name} fill={entry.fill} />
@@ -150,46 +164,58 @@ export default function ReportsPage() {
                         </PieChart>
                     </ChartContainer>
                 ): (
-                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">אין נתונים להצגה</div>
+                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
+                        <Bell className="h-10 w-10 mb-2" />
+                        <p>אין נתונים להצגה</p>
+                    </div>
                 )}
             </CardContent>
         </Card>
       </div>
       <Card>
           <CardHeader>
-          <CardTitle>חובות פתוחים לפי נושה</CardTitle>
-          <CardDescription>ניתוח סך החובות הפתוחים לכל גורם, מהגבוה לנמוך.</CardDescription>
+          <CardTitle>התחייבויות פתוחות לפי נושה</CardTitle>
+          <CardDescription>ניתוח סך ההתחייבויות הפתוחות לכל גורם, מהגבוה לנמוך.</CardDescription>
           </CardHeader>
           <CardContent>
           {barChartData.length > 0 ? (
                 <ChartContainer config={{
                   total: {
-                  label: "סך חוב",
-                  color: "hsl(var(--primary))",
+                    label: "סך התחייבות",
+                    color: "hsl(var(--primary))",
                   },
-              }} className="h-[400px] w-full">
-              <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }} layout="vertical">
-                  <CartesianGrid horizontal={false} />
-                  <XAxis type="number" dataKey="total" tickFormatter={(value) => `₪${Number(value).toLocaleString()}`} />
-                  <YAxis 
-                      dataKey="name" 
-                      type="category"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      width={100}
-                      tickFormatter={(value) => value.slice(0, 15)}
-                  />
-                  <Tooltip 
-                      cursor={false}
-                      formatter={(value) => `₪${Number(value).toLocaleString()}`}
-                      content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Bar dataKey="total" fill="var(--color-total)" radius={5} />
-              </BarChart>
-          </ChartContainer>
+                }} className="h-[400px] w-full">
+                <BarChart data={barChartData} layout="vertical" margin={{ left: 10 }}>
+                    <defs>
+                        <linearGradient id="fillTotal" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid horizontal={false} />
+                    <XAxis type="number" dataKey="total" tickFormatter={(value) => `₪${Number(value).toLocaleString()}`} />
+                    <YAxis 
+                        dataKey="name" 
+                        type="category"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        width={100}
+                        tickFormatter={(value) => value.slice(0, 15)}
+                    />
+                    <Tooltip 
+                        cursor={{fill: 'hsl(var(--accent))'}}
+                        formatter={(value) => `₪${Number(value).toLocaleString()}`}
+                        content={<ChartTooltipContent indicator="dot" />}
+                    />
+                    <Bar dataKey="total" radius={[0, 4, 4, 0]} fill="url(#fillTotal)" />
+                </BarChart>
+            </ChartContainer>
           ) : (
-                <div className="h-[400px] flex items-center justify-center text-muted-foreground">אין נתונים להצגה</div>
+                <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
+                    <Bell className="h-10 w-10 mb-2" />
+                    <p>אין נתונים להצגה</p>
+                </div>
           )}
           </CardContent>
       </Card>

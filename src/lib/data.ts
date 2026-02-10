@@ -12,6 +12,7 @@ export type Transaction = {
   startDate?: string | null;
   dueDate: string;
   paymentType: 'single' | 'installments';
+  numberOfPayments?: number | null;
   nextPaymentAmount?: number | null;
   paymentMethod?: string | null;
   userId?: string;

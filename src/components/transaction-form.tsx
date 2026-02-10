@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import { format, parse } from "date-fns"
+import { format, parse, addMonths } from "date-fns"
 import { Transaction } from "@/lib/data"
 
 const dateStringSchema = z
@@ -53,6 +53,7 @@ const formSchema = z
       .min(0, { message: "הריבית לא יכולה להיות שלילית." })
       .optional(),
     paymentType: z.enum(["single", "installments"]),
+    numberOfPayments: z.coerce.number().positive().optional(),
     nextPaymentAmount: z.coerce.number().positive().optional(),
     paymentMethod: z.string().optional(),
   })
@@ -88,6 +89,23 @@ export function TransactionForm({
 
   const type = form.watch("type")
   const paymentType = form.watch("paymentType")
+  const startDate = form.watch("startDate")
+  const numberOfPayments = form.watch("numberOfPayments")
+
+  React.useEffect(() => {
+    if (paymentType === 'installments' && startDate && numberOfPayments && numberOfPayments > 0) {
+        try {
+            const parsedStartDate = parse(startDate, 'dd/MM/yyyy', new Date());
+            if (!isNaN(parsedStartDate.getTime())) {
+                const newDueDate = addMonths(parsedStartDate, numberOfPayments);
+                form.setValue('dueDate', format(newDueDate, 'dd/MM/yyyy'), { shouldValidate: true });
+            }
+        } catch (e) {
+            console.error("Could not parse start date to calculate due date:", e);
+        }
+    }
+  }, [startDate, numberOfPayments, paymentType, form]);
+
 
   const fromIsoDate = (isoDate: string | undefined | null): string => {
       if (!isoDate) return "";
@@ -106,6 +124,7 @@ export function TransactionForm({
         creditorName: transaction.creditor.name,
         startDate: fromIsoDate(transaction.startDate),
         dueDate: fromIsoDate(transaction.dueDate),
+        numberOfPayments: transaction.numberOfPayments ?? undefined,
       })
     } else {
       const defaultDueDate = new Date()
@@ -120,6 +139,7 @@ export function TransactionForm({
         interestRate: undefined,
         paymentType: "single",
         nextPaymentAmount: undefined,
+        numberOfPayments: undefined,
         paymentMethod: undefined,
         startDate: format(new Date(), "dd/MM/yyyy"),
         dueDate: format(defaultDueDate, "dd/MM/yyyy"),
@@ -163,6 +183,7 @@ export function TransactionForm({
       paymentMethod: values.paymentMethod ?? null,
       interestRate: values.interestRate ?? null,
       nextPaymentAmount: values.nextPaymentAmount ?? null,
+      numberOfPayments: values.numberOfPayments ?? null,
     }
     onFinished(newOrUpdatedTransaction)
   }
@@ -360,24 +381,44 @@ export function TransactionForm({
         />
 
         {paymentType === "installments" && (
-          <FormField
-            control={form.control}
-            name="nextPaymentAmount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>החזר חודשי (₪)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="500"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="nextPaymentAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>החזר חודשי (₪)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="500"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="numberOfPayments"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>מספר תשלומים</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="12"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -428,7 +469,7 @@ export function TransactionForm({
               <FormLabel>אמצעי תשלום</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                defaultValue={field.value ?? undefined}
                 dir="rtl"
               >
                 <FormControl>

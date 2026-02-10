@@ -33,6 +33,7 @@
         "startDate": { "type": ["string", "null"], "format": "date", "description": "The date the transaction was initiated." },
         "dueDate": { "type": "string", "format": "date" },
         "paymentType": { "type": "string", "enum": ["single", "installments"] },
+        "numberOfPayments": { "type": ["number", "null"], "description": "The total number of installments for the loan." },
         "nextPaymentAmount": { "type": ["number", "null"] },
         "paymentMethod": { "type": ["string", "null"], "description": "The method used for payments.", "enum": ["Bank Transfer", "Credit Card", "Cash", "Other"] },
         "description": { "type": ["string", "null"], "description": "Notes or details about the transaction." }
