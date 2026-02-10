@@ -23,6 +23,7 @@ import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { he } from 'date-fns/locale';
 import { Transaction } from "@/lib/data";
 
 const formSchema = z.object({
@@ -305,7 +306,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, "dd/MM/yyyy")
                           ) : (
                             <span>בחר תאריך</span>
                           )}
@@ -315,6 +316,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
+                        locale={he}
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
@@ -332,7 +334,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
               render={({ field }) => (
                 <FormItem className="flex flex-col pt-2">
                   <FormLabel>{paymentType === 'installments' ? 'תאריך תשלום הבא' : 'תאריך יעד'}</FormLabel>
-                  <Popover modal={true}>
+                   <Popover modal={true}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -343,7 +345,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, "dd/MM/yyyy")
                           ) : (
                             <span>בחר תאריך</span>
                           )}
@@ -353,6 +355,7 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
+                        locale={he}
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}

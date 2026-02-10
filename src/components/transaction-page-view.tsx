@@ -207,13 +207,13 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
-              <TableHead className="hidden sm:table-cell">סכום נוכחי</TableHead>
-              <TableHead className="hidden lg:table-cell">סכום מקורי</TableHead>
-              {transactionType === 'loan' && <TableHead className="hidden md:table-cell">החזר חודשי</TableHead>}
-              {transactionType === 'loan' && <TableHead className="hidden sm:table-cell">ריבית</TableHead>}
-              <TableHead className="hidden md:table-cell">תאריך יעד</TableHead>
-              <TableHead>סטטוס</TableHead>
+              <TableHead className="text-right">{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
+              <TableHead className="hidden sm:table-cell text-right">סכום נוכחי</TableHead>
+              <TableHead className="hidden lg:table-cell text-right">סכום מקורי</TableHead>
+              {transactionType === 'loan' && <TableHead className="hidden md:table-cell text-right">החזר חודשי</TableHead>}
+              {transactionType === 'loan' && <TableHead className="hidden sm:table-cell text-right">ריבית</TableHead>}
+              <TableHead className="hidden md:table-cell text-right">תאריך יעד</TableHead>
+              <TableHead className="text-right">סטטוס</TableHead>
               <TableHead>
                 <span className="sr-only">פעולות</span>
               </TableHead>
@@ -221,24 +221,24 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
           </TableHeader>
           <TableBody>
             {transactions.map((transaction) => (
-              <TableRow key={transaction.id} className="group">
-                <TableCell>
+              <TableRow key={transaction.id} className="group hover:bg-muted/50">
+                <TableCell className="text-right">
                   <div className="font-medium">{transaction.creditor.name}</div>
                   <div className="text-xs text-muted-foreground hidden sm:block">{transaction.description}</div>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">₪{transaction.amount.toLocaleString('he-IL')}</TableCell>
-                <TableCell className="hidden lg:table-cell">{transaction.originalAmount ? `₪${transaction.originalAmount.toLocaleString('he-IL')}` : '-'}</TableCell>
-                {transactionType === 'loan' && <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden sm:table-cell text-right">₪{transaction.amount.toLocaleString('he-IL')}</TableCell>
+                <TableCell className="hidden lg:table-cell text-right">{transaction.originalAmount ? `₪${transaction.originalAmount.toLocaleString('he-IL')}` : '-'}</TableCell>
+                {transactionType === 'loan' && <TableCell className="hidden md:table-cell text-right">
                   {transaction.paymentType === 'installments' && transaction.nextPaymentAmount ? `₪${transaction.nextPaymentAmount.toLocaleString('he-IL')}` : '-'}
                 </TableCell>}
-                {transactionType === 'loan' && <TableCell className="hidden sm:table-cell">{transaction.interestRate !== undefined ? `${transaction.interestRate}%` : '-'}</TableCell>}
-                <TableCell className="hidden md:table-cell">{transaction.dueDate}</TableCell>
-                <TableCell>
+                {transactionType === 'loan' && <TableCell className="hidden sm:table-cell text-right">{transaction.interestRate !== undefined ? `${transaction.interestRate}%` : '-'}</TableCell>}
+                <TableCell className="hidden md:table-cell text-right">{transaction.dueDate}</TableCell>
+                <TableCell className="text-right">
                   <Badge variant={statusMap[transaction.status].variant}>
                     {statusMap[transaction.status].text}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-left">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => { setEditingTransaction(transaction); setIsFormOpen(true); }}>
                             <Pencil className="h-4 w-4" />
@@ -265,14 +265,14 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {transactions.map(transaction => (
         <Card key={transaction.id} className="group flex flex-col transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
-          <CardHeader>
+          <CardHeader className="text-right">
             <div className="flex items-start justify-between">
                 <div>
                     <CardTitle>{transaction.creditor.name}</CardTitle>
                     <CardDescription>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                            {transactionType === 'loan' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
+                        <div className="flex items-center gap-1.5 justify-end text-xs text-muted-foreground mt-1">
                             <span>{entityName}</span>
+                            {transactionType === 'loan' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
                         </div>
                     </CardDescription>
                 </div>
@@ -288,19 +288,18 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 </div>
             </div>
           </CardHeader>
-          <CardContent className="flex-grow space-y-4">
-            <div className="flex items-start gap-4">
-              <Wallet className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-              <div>
+          <CardContent className="flex-grow space-y-4 text-right">
+            <div className="flex items-start gap-4 justify-end">
+              <div className="text-right">
                 <p className="text-sm font-medium text-muted-foreground">סכום נוכחי</p>
                 <p className="font-headline text-2xl font-bold">₪{transaction.amount.toLocaleString('he-IL')}</p>
                  {transaction.originalAmount && transaction.originalAmount > transaction.amount && <p className="text-xs text-muted-foreground">מתוך ₪{transaction.originalAmount.toLocaleString('he-IL')}</p>}
               </div>
+              <Wallet className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
             </div>
             {transactionType === 'loan' && (
-              <div className="flex items-start gap-4">
-                <Repeat className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-                <div>
+              <div className="flex items-start gap-4 justify-end">
+                <div className="text-right">
                   <p className="text-sm font-medium text-muted-foreground">אופן תשלום</p>
                   <p className="text-sm">
                     {transaction.paymentType === 'single' ? 'תשלום חד פעמי' : `תשלומים`}
@@ -309,23 +308,24 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                     )}
                   </p>
                 </div>
+                <Repeat className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
               </div>
             )}
              {transaction.description && (
-              <div className="flex items-start gap-4">
-                <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-                <div>
+              <div className="flex items-start gap-4 justify-end">
+                <div className="text-right">
                   <p className="text-sm font-medium text-muted-foreground">הערות</p>
                   <p className="text-sm text-muted-foreground">{transaction.description}</p>
                 </div>
+                <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
               </div>
             )}
-            <div className="flex items-start gap-4">
-              <Calendar className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-              <div>
+            <div className="flex items-start gap-4 justify-end">
+              <div className="text-right">
                 <p className="text-sm font-medium text-muted-foreground">תאריך יעד</p>
                 <p className="text-sm">{transaction.dueDate}</p>
               </div>
+              <Calendar className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
             </div>
           </CardContent>
           <CardFooter className={`flex text-xs text-muted-foreground ${transactionType === 'loan' ? 'justify-between' : 'justify-end'}`}>
@@ -347,7 +347,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     return (
         <form onSubmit={form.handleSubmit(handleSpreadsheetSave)}>
             <Card>
-                <CardHeader>
+                <CardHeader className="text-right">
                     <CardTitle className="font-headline">עריכה מהירה (דמוי Excel)</CardTitle>
                     <CardDescription>
                         ערוך את הנתונים ישירות בטבלה. לחץ על "שמור שינויים" בסיום.
@@ -358,33 +358,33 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[200px]">{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
-                                    <TableHead>סכום נוכחי</TableHead>
-                                    <TableHead>סכום מקורי</TableHead>
-                                    {transactionType === 'loan' && <TableHead>החזר חודשי</TableHead>}
-                                    <TableHead>תאריך יעד</TableHead>
-                                    <TableHead>סטטוס</TableHead>
+                                    <TableHead className="w-[200px] text-right">{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
+                                    <TableHead className="text-right">סכום נוכחי</TableHead>
+                                    <TableHead className="text-right">סכום מקורי</TableHead>
+                                    {transactionType === 'loan' && <TableHead className="text-right">החזר חודשי</TableHead>}
+                                    <TableHead className="text-right">תאריך יעד</TableHead>
+                                    <TableHead className="text-right">סטטוס</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {fields.map((field, index) => (
                                     <TableRow key={field.id}>
                                         <TableCell className="font-medium p-1">
-                                            <Input {...form.register(`transactions.${index}.creditor.name`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
+                                            <Input {...form.register(`transactions.${index}.creditor.name`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring text-right" />
                                             {form.formState.errors.transactions?.[index]?.creditor?.name && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.creditor?.name?.message}</p>}
                                         </TableCell>
                                         <TableCell className="p-1">
-                                            <Input type="number" {...form.register(`transactions.${index}.amount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
+                                            <Input type="number" {...form.register(`transactions.${index}.amount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring text-right" />
                                             {form.formState.errors.transactions?.[index]?.amount && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.amount?.message}</p>}
                                         </TableCell>
                                         <TableCell className="p-1">
-                                            <Input type="number" {...form.register(`transactions.${index}.originalAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
+                                            <Input type="number" {...form.register(`transactions.${index}.originalAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring text-right" placeholder="-" />
                                         </TableCell>
                                         {transactionType === 'loan' && <TableCell className="p-1">
-                                            <Input type="number" {...form.register(`transactions.${index}.nextPaymentAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" placeholder="-" />
+                                            <Input type="number" {...form.register(`transactions.${index}.nextPaymentAmount`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring text-right" placeholder="-" />
                                         </TableCell>}
                                         <TableCell className="p-1">
-                                            <Input type="date" {...form.register(`transactions.${index}.dueDate`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring" />
+                                            <Input type="date" {...form.register(`transactions.${index}.dueDate`)} className="bg-transparent border-0 rounded-none h-auto p-2 focus-visible:ring-1 focus-visible:ring-ring text-right" />
                                             {form.formState.errors.transactions?.[index]?.dueDate && <p className="text-xs text-destructive mt-1 px-2">{form.formState.errors.transactions[index]?.dueDate?.message}</p>}
                                         </TableCell>
                                         <TableCell className="p-1">
@@ -392,7 +392,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                                                 control={form.control}
                                                 name={`transactions.${index}.status`}
                                                 render={({ field }) => (
-                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                    <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                                         <SelectTrigger className="bg-transparent border-0 rounded-none h-auto p-2 focus:ring-1 focus:ring-ring">
                                                             <SelectValue placeholder="בחר סטטוס" />
                                                         </SelectTrigger>
@@ -421,7 +421,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
-      <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2">
+      <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2 text-right">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight">
             {pageTitle}
@@ -470,8 +470,8 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
       {viewMode === 'table' ? renderTable() : (viewMode === 'cards' ? renderCards() : renderSpreadsheet())}
       
       <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader className="text-right">
             <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
             <AlertDialogDescription>
               פעולה זו תמחק את הרישום עבור {deletingTransaction?.creditor.name} לצמיתות. לא ניתן לבטל פעולה זו.

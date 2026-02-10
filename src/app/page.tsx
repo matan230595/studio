@@ -32,7 +32,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
 import { useToast } from '@/hooks/use-toast';
@@ -122,7 +121,7 @@ export default function Dashboard() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
         <div className="flex items-center justify-between">
-          <header>
+          <header className="text-right">
             <h1 className="font-headline text-3xl font-bold tracking-tight">
               ברוך הבא, {user?.displayName || 'משתמש'}!
             </h1>
@@ -144,41 +143,41 @@ export default function Dashboard() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-right">
               <CardTitle className="text-sm font-medium">סך התחייבויות</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-right">
               <div className="font-headline text-2xl font-bold">₪{stats.totalOwed.toLocaleString('he-IL')}</div>
               <p className="text-xs text-muted-foreground">כולל חובות והלוואות פעילים.</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-right">
               <CardTitle className="text-sm font-medium">החזר חודשי צפוי</CardTitle>
               <Percent className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-right">
               <div className="font-headline text-2xl font-bold">₪{stats.monthlyRepayment.toLocaleString('he-IL')}</div>
               <p className="text-xs text-muted-foreground">מתוך הלוואות בתשלומים.</p>
             </CardContent>
           </Card>
            <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-right">
               <CardTitle className="text-sm font-medium">סך הלוואות</CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-500" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-right">
               <div className="font-headline text-2xl font-bold">₪{stats.totalLoans.toLocaleString('he-IL')}</div>
               <p className="text-xs text-muted-foreground">סך יתרת ההלוואות הפתוחות.</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-right">
               <CardTitle className="text-sm font-medium">סך חובות</CardTitle>
               <TrendingDown className="h-4 w-4 text-orange-500" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-right">
               <div className="font-headline text-2xl font-bold">₪{stats.totalDebts.toLocaleString('he-IL')}</div>
               <p className="text-xs text-muted-foreground">סך יתרת החובות הפתוחים.</p>
             </CardContent>
@@ -187,7 +186,7 @@ export default function Dashboard() {
         
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
-            <CardHeader>
+            <CardHeader className="text-right">
                 <CardTitle>תשלומים קרובים החודש</CardTitle>
                 <CardDescription>תצוגה ויזואלית של תשלומים שיש לבצע החודש.</CardDescription>
             </CardHeader>
@@ -214,10 +213,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           <Card>
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-destructive" />
+              <CardHeader className="text-right">
+                  <CardTitle className="flex items-center gap-2 justify-end">
                       פריטים דחופים (באיחור)
+                      <AlertCircle className="h-5 w-5 text-destructive" />
                   </CardTitle>
                   <CardDescription>התחייבויות שמועד פירעונן עבר ויש לטפל בהן.</CardDescription>
               </CardHeader>
@@ -226,17 +225,17 @@ export default function Dashboard() {
                   <Table>
                       <TableHeader>
                           <TableRow>
-                              <TableHead>שם</TableHead>
-                              <TableHead>סכום</TableHead>
-                              <TableHead>סוג</TableHead>
+                              <TableHead className="text-right">שם</TableHead>
+                              <TableHead className="text-right">סכום</TableHead>
+                              <TableHead className="text-right">סוג</TableHead>
                           </TableRow>
                       </TableHeader>
                       <TableBody>
                       {lateTransactions.map((item) => (
                           <TableRow key={item.id} className="text-destructive hover:bg-destructive/10">
-                              <TableCell className="font-medium">{item.creditor.name}</TableCell>
-                              <TableCell>₪{item.amount.toLocaleString('he-IL')}</TableCell>
-                              <TableCell>
+                              <TableCell className="font-medium text-right">{item.creditor.name}</TableCell>
+                              <TableCell className="text-right">₪{item.amount.toLocaleString('he-IL')}</TableCell>
+                              <TableCell className="text-right">
                                   <Link href={item.type === 'loan' ? '/loans' : '/debts'}>
                                       <Badge variant="destructive">{item.type === 'loan' ? 'הלוואה' : 'חוב'}</Badge>
                                   </Link>
