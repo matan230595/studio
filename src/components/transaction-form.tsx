@@ -89,7 +89,7 @@ export function TransactionForm({
   const type = form.watch("type")
   const paymentType = form.watch("paymentType")
 
-  const fromIsoDate = (isoDate: string | undefined): string => {
+  const fromIsoDate = (isoDate: string | undefined | null): string => {
       if (!isoDate) return "";
       try {
         const date = parse(isoDate, 'yyyy-MM-dd', new Date());
@@ -155,14 +155,14 @@ export function TransactionForm({
       },
       type: values.type,
       amount: values.amount,
-      originalAmount: values.originalAmount || values.amount,
-      description: values.description,
+      originalAmount: values.originalAmount ?? values.amount,
+      description: values.description ?? null,
       startDate: isoStartDate || format(new Date(), 'yyyy-MM-dd'),
       dueDate: isoDueDate,
       paymentType: values.paymentType,
-      paymentMethod: values.paymentMethod,
-      interestRate: values.interestRate,
-      nextPaymentAmount: values.nextPaymentAmount,
+      paymentMethod: values.paymentMethod ?? null,
+      interestRate: values.interestRate ?? null,
+      nextPaymentAmount: values.nextPaymentAmount ?? null,
     }
     onFinished(newOrUpdatedTransaction)
   }

@@ -4,16 +4,16 @@ export type Transaction = {
   creditor: {
     name: string;
   };
-  description?: string;
+  description?: string | null;
   amount: number;
-  originalAmount?: number;
-  interestRate?: number;
+  originalAmount?: number | null;
+  interestRate?: number | null;
   status: 'active' | 'paid' | 'late';
-  startDate?: string;
+  startDate?: string | null;
   dueDate: string;
   paymentType: 'single' | 'installments';
-  nextPaymentAmount?: number;
-  paymentMethod?: string;
+  nextPaymentAmount?: number | null;
+  paymentMethod?: string | null;
   userId?: string;
 };
 

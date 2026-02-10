@@ -27,15 +27,15 @@
           "required": ["name"]
         },
         "amount": { "type": "number" },
-        "originalAmount": { "type": "number", "description": "The original principal amount, especially for loans." },
-        "interestRate": { "type": "number" },
+        "originalAmount": { "type": ["number", "null"], "description": "The original principal amount, especially for loans." },
+        "interestRate": { "type": ["number", "null"] },
         "status": { "type": "string", "enum": ["active", "paid", "late"] },
-        "startDate": { "type": "string", "format": "date", "description": "The date the transaction was initiated." },
+        "startDate": { "type": ["string", "null"], "format": "date", "description": "The date the transaction was initiated." },
         "dueDate": { "type": "string", "format": "date" },
         "paymentType": { "type": "string", "enum": ["single", "installments"] },
-        "nextPaymentAmount": { "type": "number" },
-        "paymentMethod": { "type": "string", "description": "The method used for payments.", "enum": ["Bank Transfer", "Credit Card", "Cash", "Other"] },
-        "description": { "type": "string", "description": "Notes or details about the transaction." }
+        "nextPaymentAmount": { "type": ["number", "null"] },
+        "paymentMethod": { "type": ["string", "null"], "description": "The method used for payments.", "enum": ["Bank Transfer", "Credit Card", "Cash", "Other"] },
+        "description": { "type": ["string", "null"], "description": "Notes or details about the transaction." }
       },
       "required": ["userId", "type", "creditor", "amount", "status", "dueDate", "paymentType"]
     }
