@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet, Wallet, Repeat, Calendar, FileText, BanknoteIcon } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet, Wallet, Repeat, Calendar, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
