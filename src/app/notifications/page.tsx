@@ -1,7 +1,5 @@
 "use client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getAiHint, getAvatarUrl } from '@/lib/utils';
 import { Bell, Banknote, Landmark, BadgeCheck, AlertTriangle, Clock } from 'lucide-react';
 import React from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
@@ -164,10 +162,9 @@ export default function NotificationsPage() {
                 const { description, icon } = getActivityInfo(transaction);
                 return (
                     <div key={transaction.id} className="flex items-center gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors">
-                        <Avatar className="h-10 w-10">
-                            <AvatarImage src={getAvatarUrl(transaction.creditor.avatar)} alt={transaction.creditor.name} data-ai-hint={getAiHint(transaction.creditor.avatar)} />
-                            <AvatarFallback>{transaction.creditor.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className="bg-muted rounded-full p-2">
+                           {icon}
+                        </div>
                         <div className="flex-grow">
                             <p className="font-medium">
                                 {description}
@@ -180,9 +177,6 @@ export default function NotificationsPage() {
                                     <span>{transaction.type === 'loan' ? 'הלוואה' : 'חוב'}</span>
                                 </div>
                             </div>
-                        </div>
-                         <div className="bg-muted rounded-full p-2 hidden sm:block">
-                           {icon}
                         </div>
                     </div>
                 )

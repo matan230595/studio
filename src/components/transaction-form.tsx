@@ -18,21 +18,15 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, PlusCircle, Wand2 } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Transaction } from "@/lib/data";
-import { generateImage } from "@/ai/flows/generate-image-flow";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getAvatarUrl } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("debt"),
     creditorName: z.string().min(2, { message: "שם הנושה חייב להכיל לפחות 2 תווים." }),
-    creditorAvatar: z.string().min(1, { message: "יש לבחור או ליצור תמונה." }),
     amount: z.coerce.number().positive({ message: "הסכום חייב להיות מספר חיובי." }),
     dueDate: z.date({ required_error: "יש לבחור תאריך יעד." }),
     paymentType: z.enum(['single', 'installments']),
@@ -40,7 +34,6 @@ const formSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("loan"),
     creditorName: z.string().min(2, { message: "שם המלווה חייב להכיל לפחות 2 תווים." }),
-    creditorAvatar: z.string().min(1, { message: "יש לבחור או ליצור תמונה." }),
     amount: z.coerce.number().positive({ message: "סכום הקרן חייב להיות מספר חיובי." }),
     interestRate: z.coerce.number().min(0, { message: "הריבית לא יכולה להיות שלילית." }).optional(),
     paymentType: z.enum(['single', 'installments'], { required_error: 'יש לבחור אופן תשלום.'}),
@@ -60,9 +53,6 @@ const formSchema = z.discriminatedUnion("type", [
 
 export function TransactionForm({ onFinished, transaction, fixedType }: { onFinished: (transaction: Transaction) => void, transaction?: Transaction | null, fixedType?: 'debt' | 'loan' }) {
   
-  const [isGenerating, setIsGenerating] = React.useState(false);
-  const [generationPrompt, setGenerationPrompt] = React.useState("");
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: transaction ? (
@@ -71,7 +61,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
         dueDate: new Date(transaction.dueDate),
         amount: transaction.amount ?? undefined,
         creditorName: transaction.creditor.name ?? "",
-        creditorAvatar: transaction.creditor.avatar ?? "",
         ...(transaction.type === 'loan' && {
           paymentType: transaction.paymentType,
           interestRate: transaction.interestRate ?? 0,
@@ -81,27 +70,11 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
     ) : {
       type: fixedType || "debt",
       paymentType: 'single',
-      creditorAvatar: "avatar1",
     },
   });
 
   const type = form.watch("type");
   const paymentType = form.watch("paymentType");
-
-  const handleGenerateAvatar = async () => {
-    if (!generationPrompt) return;
-    setIsGenerating(true);
-    try {
-        const result = await generateImage({ prompt: generationPrompt });
-        form.setValue('creditorAvatar', result.imageDataUri, { shouldValidate: true });
-    } catch (error) {
-        console.error("Avatar generation failed", error);
-        // TODO: Show toast on error
-    } finally {
-        setIsGenerating(false);
-    }
-  }
-
 
   React.useEffect(() => {
     if (transaction) {
@@ -110,7 +83,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
         dueDate: new Date(transaction.dueDate),
         amount: transaction.amount ?? undefined,
         creditorName: transaction.creditor.name ?? "",
-        creditorAvatar: transaction.creditor.avatar ?? "",
         ...(transaction.type === 'loan' ? {
           paymentType: transaction.paymentType,
           interestRate: transaction.interestRate ?? 0,
@@ -123,7 +95,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       form.reset({
         type: fixedType || 'debt',
         creditorName: "",
-        creditorAvatar: "avatar1",
         amount: undefined,
         dueDate: undefined,
         paymentType: fixedType === 'loan' ? undefined : 'single',
@@ -139,7 +110,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
       status: transaction?.status || 'active',
       creditor: {
         name: values.creditorName,
-        avatar: values.creditorAvatar,
       },
       dueDate: format(values.dueDate, 'yyyy-MM-dd'),
       type: values.type,
@@ -217,56 +187,6 @@ export function TransactionForm({ onFinished, transaction, fixedType }: { onFini
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="creditorAvatar"
-          render={({ field }) => (
-          <FormItem>
-              <FormLabel>תמונת נושה</FormLabel>
-              <FormDescription>בחר תמונה קיימת או צור אחת חדשה בעזרת AI.</FormDescription>
-              <div className="flex items-center gap-4 pt-2">
-                  <Avatar className="h-20 w-20 ring-2 ring-primary ring-offset-2 flex-shrink-0">
-                      <AvatarImage src={getAvatarUrl(field.value)} />
-                      <AvatarFallback><Wand2 /></AvatarFallback>
-                  </Avatar>
-                  <ScrollArea className="h-24 w-full">
-                      <div className="flex space-x-4 space-x-reverse pb-4">
-                          {PlaceHolderImages.map(img => (
-                              <Avatar 
-                                  key={img.id}
-                                  className={cn(
-                                      "h-20 w-20 cursor-pointer ring-2 ring-transparent transition-all hover:ring-primary flex-shrink-0",
-                                      field.value === img.id && "ring-primary"
-                                  )}
-                                  onClick={() => field.onChange(img.id)}
-                              >
-                                  <AvatarImage src={img.imageUrl} alt={img.description} />
-                                  <AvatarFallback>{img.id.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                          ))}
-                      </div>
-                  </ScrollArea>
-              </div>
-              <FormMessage />
-          </FormItem>
-          )}
-        />
-
-        <div className="space-y-2">
-            <div className="flex items-center gap-2">
-                <Input 
-                    placeholder="יצירת תמונה עם AI, לדוגמה: בניין דירות מודרני"
-                    value={generationPrompt}
-                    onChange={(e) => setGenerationPrompt(e.target.value)}
-                />
-                <Button type="button" onClick={handleGenerateAvatar} disabled={isGenerating || !generationPrompt}>
-                    {isGenerating ? <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <Wand2 />}
-                    <span className="ms-2 hidden sm:inline">{isGenerating ? "יוצר..." : "צור"}</span>
-                </Button>
-            </div>
-        </div>
-
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField

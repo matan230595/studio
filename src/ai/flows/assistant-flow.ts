@@ -15,7 +15,6 @@ const TransactionSchema = z.object({
   type: z.enum(['debt', 'loan']),
   creditor: z.object({
     name: z.string(),
-    avatar: z.string(),
   }),
   amount: z.number(),
   interestRate: z.number().optional().nullable(),

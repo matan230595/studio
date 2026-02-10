@@ -29,10 +29,9 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
 import type { Transaction } from '@/lib/data';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { getAiHint, getAvatarUrl, exportToCsv } from '@/lib/utils';
+import { exportToCsv } from '@/lib/utils';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -56,7 +55,6 @@ const spreadsheetSchema = z.object({
     type: z.enum(['debt', 'loan']),
     creditor: z.object({
       name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים."),
-      avatar: z.string(),
     }),
     amount: z.coerce.number().positive("הסכום חייב להיות חיובי."),
     interestRate: z.coerce.number().min(0).optional().nullable(),
@@ -113,7 +111,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
     React.useEffect(() => {
         if(transactions) {
-            form.reset({ transactions });
+            form.reset({ transactions: transactions.map(t => ({...t, creditor: {name: t.creditor.name}})) });
         }
     }, [transactions, form]);
 
@@ -227,13 +225,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
             {transactions.map((transaction) => (
               <TableRow key={transaction.id} className="group">
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="hidden h-9 w-9 sm:flex">
-                        <AvatarImage src={getAvatarUrl(transaction.creditor.avatar)} alt={transaction.creditor.name} data-ai-hint={getAiHint(transaction.creditor.avatar)}/>
-                        <AvatarFallback>{transaction.creditor.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="font-medium">{transaction.creditor.name}</div>
-                  </div>
+                  <div className="font-medium">{transaction.creditor.name}</div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">₪{transaction.amount.toLocaleString('he-IL')}</TableCell>
                  {transactionType === 'loan' && <TableCell className="hidden md:table-cell">
@@ -273,29 +265,27 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {transactions.map(transaction => (
         <Card key={transaction.id} className="group flex flex-col transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-start gap-4">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={getAvatarUrl(transaction.creditor.avatar)} alt={transaction.creditor.name} data-ai-hint={getAiHint(transaction.creditor.avatar)} />
-              <AvatarFallback>{transaction.creditor.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-grow">
-              <CardTitle>{transaction.creditor.name}</CardTitle>
-               <CardDescription>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                    {transactionType === 'loan' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
-                    <span>{entityName}</span>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+                <div>
+                    <CardTitle>{transaction.creditor.name}</CardTitle>
+                    <CardDescription>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                            {transactionType === 'loan' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
+                            <span>{entityName}</span>
+                        </div>
+                    </CardDescription>
                 </div>
-              </CardDescription>
-            </div>
-            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Button size="icon" variant="ghost" onClick={() => { setEditingTransaction(transaction); setIsFormOpen(true); }}>
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">ערוך</span>
-                </Button>
-                <Button size="icon" variant="ghost" onClick={() => setDeletingTransaction(transaction)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                    <span className="sr-only">מחק</span>
-                </Button>
+                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 -mr-4 -mt-2">
+                    <Button size="icon" variant="ghost" onClick={() => { setEditingTransaction(transaction); setIsFormOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">ערוך</span>
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => setDeletingTransaction(transaction)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <span className="sr-only">מחק</span>
+                    </Button>
+                </div>
             </div>
           </CardHeader>
           <CardContent className="flex-grow space-y-4">
@@ -438,7 +428,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 הוספת {entityName}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[625px]">
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                 <DialogTitle className="font-headline text-2xl">{editingTransaction ? `עריכת ${entityName}` : `הוספת ${entityName} חדש`}</DialogTitle>
                 <DialogDescription>

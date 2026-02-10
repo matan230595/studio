@@ -22,10 +22,9 @@
         "creditor": {
           "type": "object",
           "properties": {
-            "name": { "type": "string" },
-            "avatar": { "type": "string", "description": "A reference to a placeholder image ID or a data URI of a generated image." }
+            "name": { "type": "string" }
           },
-          "required": ["name", "avatar"]
+          "required": ["name"]
         },
         "amount": { "type": "number" },
         "interestRate": { "type": "number" },

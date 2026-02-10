@@ -3,7 +3,6 @@ export type Transaction = {
   type: 'debt' | 'loan';
   creditor: {
     name: string;
-    avatar: string;
   };
   amount: number;
   interestRate?: number;
