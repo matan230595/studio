@@ -149,22 +149,19 @@ export function TransactionForm({
 
   React.useEffect(() => {
     if (transaction) {
-      // Explicitly map all fields, converting null to undefined to match the form schema.
-      // This is the definitive fix for the build error.
       form.reset({
         type: transaction.type,
-        amount: transaction.amount,
-        isAutoPay: transaction.isAutoPay,
-        paymentType: transaction.paymentType,
-        
         creditorName: transaction.creditor.name,
+        description: transaction.description ?? undefined,
+        amount: transaction.amount,
         startDate: fromIsoDate(transaction.startDate),
         dueDate: fromIsoDate(transaction.dueDate),
 
-        // Optional fields: convert null -> undefined
         creditorPhone: transaction.creditor.phone ?? undefined,
         creditorEmail: transaction.creditor.email ?? undefined,
-        description: transaction.description ?? undefined,
+        accountNumber: transaction.accountNumber ?? undefined,
+        paymentUrl: transaction.paymentUrl ?? undefined,
+
         originalAmount: transaction.originalAmount ?? undefined,
         category: transaction.category ?? undefined,
         interestRate: transaction.interestRate ?? undefined,
@@ -173,11 +170,12 @@ export function TransactionForm({
         collateral: transaction.collateral ?? undefined,
         priority: transaction.priority ?? undefined,
         tags: transaction.tags ?? undefined,
+
+        paymentType: transaction.paymentType,
         numberOfPayments: transaction.numberOfPayments ?? undefined,
         nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
         paymentMethod: transaction.paymentMethod ?? undefined,
-        accountNumber: transaction.accountNumber ?? undefined,
-        paymentUrl: transaction.paymentUrl ?? undefined,
+        isAutoPay: transaction.isAutoPay,
         paymentFrequency: transaction.paymentFrequency ?? undefined,
       });
     } else {
@@ -351,7 +349,6 @@ export function TransactionForm({
                           placeholder="פרטים נוספים על ההתחייבות..."
                           {...field}
                            value={field.value ?? ""}
-                           className="text-sm"
                         />
                       </FormControl>
                       <FormMessage />
@@ -374,7 +371,6 @@ export function TransactionForm({
                             placeholder="5,000"
                             {...field}
                              value={field.value ?? ""}
-                             className="text-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -393,7 +389,6 @@ export function TransactionForm({
                             placeholder="5,000"
                             {...field}
                              value={field.value ?? ""}
-                             className="text-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -414,7 +409,6 @@ export function TransactionForm({
                                 placeholder="DD/MM/YYYY"
                                 {...field}
                                 value={field.value ?? ""}
-                                className="text-sm"
                             />
                             </FormControl>
                             <FormMessage />
@@ -432,7 +426,6 @@ export function TransactionForm({
                                 placeholder="DD/MM/YYYY"
                                 {...field}
                                 value={field.value ?? ""}
-                                className="text-sm"
                             />
                             </FormControl>
                             <FormMessage />
@@ -452,7 +445,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>מספר חשבון / אסמכתא</FormLabel>
-                      <FormControl><Input placeholder="123-456789" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                      <FormControl><Input placeholder="123-456789" {...field} value={field.value ?? ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -464,7 +457,7 @@ export function TransactionForm({
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>טלפון ליצירת קשר</FormLabel>
-                        <FormControl><Input type="tel" placeholder="050-1234567" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                        <FormControl><Input type="tel" placeholder="050-1234567" {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -475,7 +468,7 @@ export function TransactionForm({
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>אימייל ליצירת קשר</FormLabel>
-                        <FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                        <FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value ?? ""} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -487,7 +480,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>קישור לתשלום</FormLabel>
-                      <FormControl><Input type="url" placeholder="https://example.com/pay" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                      <FormControl><Input type="url" placeholder="https://example.com/pay" {...field} value={field.value ?? ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -506,7 +499,7 @@ export function TransactionForm({
                             <FormItem>
                             <FormLabel>ריבית שנתית (%)</FormLabel>
                             <FormControl>
-                                <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} className="text-sm" />
+                                <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -536,7 +529,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>עמלת פיגורים (₪)</FormLabel>
-                      <FormControl><Input type="number" placeholder="50" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                      <FormControl><Input type="number" placeholder="50" {...field} value={field.value ?? ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -547,7 +540,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>בטחונות</FormLabel>
-                      <FormControl><Input placeholder="לדוגמה: רכב, דירה" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                      <FormControl><Input placeholder="לדוגמה: רכב, דירה" {...field} value={field.value ?? ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -599,7 +592,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>תגיות (מופרדות בפסיק)</FormLabel>
-                      <FormControl><Input placeholder="חשבונות, אישי, לטיפול..." {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                      <FormControl><Input placeholder="חשבונות, אישי, לטיפול..." {...field} value={field.value ?? ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -645,7 +638,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>החזר חודשי (₪)</FormLabel>
-                            <FormControl><Input type="number" placeholder="500" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                            <FormControl><Input type="number" placeholder="500" {...field} value={field.value ?? ""} /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -656,7 +649,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>מספר תשלומים</FormLabel>
-                            <FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
+                            <FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ""} /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
