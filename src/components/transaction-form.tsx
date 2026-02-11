@@ -157,12 +157,11 @@ export function TransactionForm({
         isAutoPay: transaction.isAutoPay,
         paymentType: transaction.paymentType,
         
-        // Mapped fields
         creditorName: transaction.creditor.name,
         startDate: fromIsoDate(transaction.startDate),
         dueDate: fromIsoDate(transaction.dueDate),
 
-        // Optional fields: null -> undefined
+        // Optional fields: convert null -> undefined
         creditorPhone: transaction.creditor.phone ?? undefined,
         creditorEmail: transaction.creditor.email ?? undefined,
         description: transaction.description ?? undefined,
