@@ -24,9 +24,34 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = React.useState(
-    (props.selected as Date) || props.month || new Date()
-  )
+  const [currentMonth, setCurrentMonth] = React.useState<Date>(() => {
+    if (props.month) {
+      return props.month;
+    }
+  
+    if ("selected" in props) {
+      const selected = props.selected;
+  
+      if (selected instanceof Date) {
+        return selected;
+      }
+  
+      if (Array.isArray(selected) && selected.length > 0 && selected[0] instanceof Date) {
+        return selected[0];
+      }
+  
+      if (
+        typeof selected === "object" &&
+        selected !== null &&
+        "from" in selected &&
+        (selected as any).from instanceof Date
+      ) {
+        return (selected as any).from;
+      }
+    }
+  
+    return new Date();
+  });
 
   React.useEffect(() => {
     if (props.month) {
