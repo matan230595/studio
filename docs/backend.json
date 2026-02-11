@@ -51,6 +51,28 @@
         "description": { "type": ["string", "null"], "description": "Notes or details about the transaction." }
       },
       "required": ["userId", "type", "creditor", "amount", "status", "dueDate", "paymentType", "isAutoPay"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "type": "object",
+      "description": "Represents a monthly budget for a user.",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this budget." },
+        "month": { "type": "string", "description": "The month of the budget in YYYY-MM format." },
+        "categoryBudgets": {
+          "type": "array",
+          "description": "An array of budget allocations for different categories.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string", "enum": ["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"] },
+              "amount": { "type": "number" }
+            },
+            "required": ["category", "amount"]
+          }
+        }
+      },
+      "required": ["userId", "month", "categoryBudgets"]
     }
   },
   "auth": {
@@ -64,6 +86,10 @@
     "/users/{userId}/transactions/{transactionId}": {
       "schema": { "$ref": "#/entities/Transaction" },
       "description": "Stores transaction (debt or loan) information for a specific user. Only the user can access their own data."
+    },
+    "/users/{userId}/budgets/{month}": {
+      "schema": { "$ref": "#/entities/Budget" },
+      "description": "Stores a user's monthly budget. The document ID is the month in 'YYYY-MM' format."
     }
   }
 }

@@ -31,3 +31,15 @@ export type Transaction = {
 };
 
 export const transactions: Transaction[] = [];
+
+export type CategoryBudget = {
+  category: 'דיור' | 'רכב' | 'לימודים' | 'עסק' | 'אישי' | 'אחר';
+  amount: number;
+};
+
+export type Budget = {
+  id: string; // Will be YYYY-MM
+  userId: string;
+  month: string;
+  categoryBudgets: CategoryBudget[];
+};

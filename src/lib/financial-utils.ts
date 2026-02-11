@@ -61,3 +61,23 @@ export function getUrgentItem(transactions: Transaction[]): Transaction | null {
     }
     return null;
 }
+
+export function calculateSpendingByCategory(transactions: Transaction[]): Record<string, number> {
+  if (!transactions) return {};
+
+  return transactions.reduce((acc, t) => {
+    if (t.category) {
+      if (!acc[t.category]) {
+        acc[t.category] = 0;
+      }
+      // Assuming all transactions are debits against the budget
+      if (t.type === 'debt') {
+         acc[t.category] += t.amount;
+      } else if (t.type === 'loan' && t.nextPaymentAmount) {
+         // For loans, we count the monthly payment towards the budget
+         acc[t.category] += t.nextPaymentAmount;
+      }
+    }
+    return acc;
+  }, {} as Record<string, number>);
+}
