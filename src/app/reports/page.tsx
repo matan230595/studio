@@ -10,6 +10,9 @@ import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bell } from "lucide-react";
 
+const PIE_COLORS_STATUS = ["#3b82f6", "#ef4444", "#22c55e"]; // Blue, Red, Green
+const PIE_COLORS_TYPE = ["#8b5cf6", "#f97316"]; // Purple, Orange
+
 export default function ReportsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -40,7 +43,7 @@ export default function ReportsPage() {
         const barData = Object.entries(debtByCreditor).map(([name, total]) => ({
             name,
             total,
-        })).sort((a, b) => b.total - a.total);
+        })).sort((a, b) => b.total - a.total); // Sort descending
 
         // Data for Pie Chart (Status breakdown)
         const statusData = transactions.reduce((acc, curr) => {
@@ -49,9 +52,9 @@ export default function ReportsPage() {
             }, {} as Record<string, number>);
 
         const pieStatusData = [
-            { name: "פעילים", value: statusData.active || 0, fill: "hsl(var(--chart-1))" },
-            { name: "באיחור", value: statusData.late || 0, fill: "hsl(var(--chart-2))" },
-            { name: "שולמו", value: statusData.paid || 0, fill: "hsl(var(--chart-3))" },
+            { name: "פעילים", value: statusData.active || 0 },
+            { name: "באיחור", value: statusData.late || 0 },
+            { name: "שולמו", value: statusData.paid || 0 },
         ].filter(d => d.value > 0);
 
         // Data for Pie Chart (Type breakdown)
@@ -65,8 +68,8 @@ export default function ReportsPage() {
             );
 
         const pieTypeData = [
-            { name: "חובות", value: typeData.debt, fill: "hsl(var(--chart-4))" },
-            { name: "הלוואות", value: typeData.loan, fill: "hsl(var(--chart-5))" },
+            { name: "חובות", value: typeData.debt },
+            { name: "הלוואות", value: typeData.loan },
         ].filter(d => d.value > 0);
 
 
@@ -122,14 +125,15 @@ export default function ReportsPage() {
                               const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                               const x = cx + radius * Math.cos(-midAngle * RADIAN);
                               const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                              if (percent === 0) return null;
                               return (
                                 <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
                                   {`${(percent * 100).toFixed(0)}%`}
                                 </text>
                               );
                             }}>
-                            {pieChartStatusData.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                            {pieChartStatusData.map((entry, index) => (
+                                <Cell key={`cell-${entry.name}`} fill={PIE_COLORS_STATUS[index % PIE_COLORS_STATUS.length]} />
                             ))}
                           </Pie>
                           <ChartLegend content={<ChartLegendContent />} />
@@ -154,6 +158,7 @@ export default function ReportsPage() {
                                 const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                                 const x = cx + radius * Math.cos(-midAngle * RADIAN);
                                 const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                if (percent === 0) return null;
                                 return (
                                   <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
                                     {`${(percent * 100).toFixed(0)}%`}
@@ -161,8 +166,8 @@ export default function ReportsPage() {
                                 );
                               }}
                             >
-                            {pieChartTypeData.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                            {pieChartTypeData.map((entry, index) => (
+                                <Cell key={`cell-${entry.name}`} fill={PIE_COLORS_TYPE[index % PIE_COLORS_TYPE.length]} />
                             ))}
                             </Pie>
                         <ChartLegend content={<ChartLegendContent />} />
@@ -182,7 +187,7 @@ export default function ReportsPage() {
                 <ChartContainer config={{
                   total: {
                     label: "סך התחייבות",
-                    color: "hsl(var(--primary))",
+                    color: "#3b82f6",
                   },
                 }} className="h-[400px] w-full">
                 <BarChart data={barChartData} layout="vertical" margin={{ right: 20, left: 10, top: 10, bottom: 10 }}>
@@ -196,7 +201,6 @@ export default function ReportsPage() {
                         tickMargin={8}
                         width={100}
                         tickFormatter={(value) => value.length > 15 ? `${value.slice(0,15)}...` : value}
-                        reversed={true}
                     />
                     <Tooltip 
                         cursor={{fill: 'hsl(var(--accent))'}}
