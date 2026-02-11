@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, setDoc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Budget, Transaction, CategoryBudget } from '@/lib/data';
 import { calculateSpendingByCategory } from '@/lib/financial-utils';
@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DollarSign, PiggyBank, Receipt, PlusCircle, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const BUDGET_CATEGORIES: Array<CategoryBudget['category']> = ["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"];
+const BUDGET_CATEGORIES = ["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"] as const;
 
 const formSchema = z.object({
   categoryBudgets: z.array(z.object({
@@ -38,7 +38,8 @@ type BudgetFormData = z.infer<typeof formSchema>;
 
 // Form Component
 const BudgetForm = ({ budget, month, onFinished }: { budget: Budget | null, month: string, onFinished: () => void }) => {
-  const { user, firestore } = useFirebase();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const defaultValues = useMemo(() => {
