@@ -35,6 +35,8 @@ import {
 
 import { format, parse, addMonths } from "date-fns"
 import { Transaction } from "@/lib/data"
+import { mapTransactionToFormDefaults } from "@/lib/transactionFormMapper"
+import { PAYMENT_METHODS } from "@/lib/transactionFormMapper"
 
 const dateStringSchema = z
   .string()
@@ -76,7 +78,7 @@ const formSchema = z
     paymentType: z.enum(["single", "installments"]),
     numberOfPayments: optionalNumber,
     nextPaymentAmount: optionalNumber,
-    paymentMethod: z.enum(["העברה בנקאית", "כרטיס אשראי", "מזומן", "אחר"]).optional(),
+    paymentMethod: z.enum(PAYMENT_METHODS).optional(),
     isAutoPay: z.boolean().default(false),
     paymentFrequency: z.enum(['יומי', 'שבועי', 'דו-שבועי', 'חודשי', 'רבעוני', 'שנתי']).optional(),
   })
@@ -132,50 +134,12 @@ export function TransactionForm({
     }
   }, [startDate, numberOfPayments, paymentType, form]);
 
-
-  const fromIsoDate = (isoDate: string | undefined | null): string => {
-      if (!isoDate) return "";
-      try {
-        // Handle both yyyy-MM-dd and dd/MM/yyyy inputs gracefully
-        if (isoDate.includes('-')) {
-            const date = parse(isoDate, 'yyyy-MM-dd', new Date());
-            return format(date, 'dd/MM/yyyy');
-        }
-        return isoDate; // Already in dd/MM/yyyy format
-      } catch {
-        return isoDate;
-      }
-  };
-
   React.useEffect(() => {
     if (transaction) {
-      form.reset({
-        type: transaction.type,
-        creditorName: transaction.creditor.name,
-        description: transaction.description ?? undefined,
-        amount: transaction.amount,
-        startDate: fromIsoDate(transaction.startDate),
-        dueDate: fromIsoDate(transaction.dueDate),
-        creditorPhone: transaction.creditor.phone ?? undefined,
-        creditorEmail: transaction.creditor.email ?? undefined,
-        accountNumber: transaction.accountNumber ?? undefined,
-        paymentUrl: transaction.paymentUrl ?? undefined,
-        originalAmount: transaction.originalAmount ?? undefined,
-        category: transaction.category ?? undefined,
-        interestRate: transaction.interestRate ?? undefined,
-        interestType: transaction.interestType ?? undefined,
-        lateFee: transaction.lateFee ?? undefined,
-        collateral: transaction.collateral ?? undefined,
-        priority: transaction.priority ?? undefined,
-        tags: transaction.tags ?? undefined,
-        paymentType: transaction.paymentType,
-        numberOfPayments: transaction.numberOfPayments ?? undefined,
-        nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
-        paymentMethod: transaction.paymentMethod ?? undefined,
-        isAutoPay: transaction.isAutoPay,
-        paymentFrequency: transaction.paymentFrequency ?? undefined,
-      });
+      // Use the robust mapping function to set form values safely
+      form.reset(mapTransactionToFormDefaults(transaction));
     } else {
+      // Logic for creating a new transaction remains the same
       const defaultDueDate = new Date()
       defaultDueDate.setMonth(defaultDueDate.getMonth() + 1)
 
