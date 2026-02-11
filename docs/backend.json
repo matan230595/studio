@@ -22,14 +22,26 @@
         "creditor": {
           "type": "object",
           "properties": {
-            "name": { "type": "string" }
+            "name": { "type": "string" },
+            "phone": { "type": ["string", "null"] },
+            "email": { "type": ["string", "null"], "format": "email" }
           },
           "required": ["name"]
         },
+        "accountNumber": { "type": ["string", "null"] },
+        "paymentUrl": { "type": ["string", "null"], "format": "uri" },
         "amount": { "type": "number" },
         "originalAmount": { "type": ["number", "null"], "description": "The original principal amount, especially for loans." },
+        "category": { "type": ["string", "null"], "enum": ["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"] },
         "interestRate": { "type": ["number", "null"] },
+        "interestType": { "type": ["string", "null"], "enum": ["קבועה", "משתנה"] },
+        "lateFee": { "type": ["number", "null"] },
+        "collateral": { "type": ["string", "null"] },
         "status": { "type": "string", "enum": ["active", "paid", "late"] },
+        "isAutoPay": { "type": "boolean" },
+        "paymentFrequency": { "type": ["string", "null"], "enum": ["יומי", "שבועי", "דו-שבועי", "חודשי", "רבעוני", "שנתי"] },
+        "priority": { "type": ["string", "null"], "enum": ["נמוכה", "בינונית", "גבוהה"] },
+        "tags": { "type": ["string", "null"] },
         "startDate": { "type": ["string", "null"], "format": "date", "description": "The date the transaction was initiated." },
         "dueDate": { "type": "string", "format": "date" },
         "paymentType": { "type": "string", "enum": ["single", "installments"] },
@@ -38,7 +50,7 @@
         "paymentMethod": { "type": ["string", "null"], "description": "The method used for payments.", "enum": ["Bank Transfer", "Credit Card", "Cash", "Other"] },
         "description": { "type": ["string", "null"], "description": "Notes or details about the transaction." }
       },
-      "required": ["userId", "type", "creditor", "amount", "status", "dueDate", "paymentType"]
+      "required": ["userId", "type", "creditor", "amount", "status", "dueDate", "paymentType", "isAutoPay"]
     }
   },
   "auth": {

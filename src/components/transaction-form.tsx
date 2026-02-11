@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, ChevronDown } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -24,6 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 import { format, parse, addMonths } from "date-fns"
 import { Transaction } from "@/lib/data"
@@ -32,9 +39,12 @@ const dateStringSchema = z
   .string()
   .regex(/^\d{2}\/\d{2}\/\d{4}$/, "התאריך חייב להיות בפורמט DD/MM/YYYY")
 
+const optionalNumber = z.coerce.number().positive().optional().or(z.literal("")).transform(v => v === "" ? undefined : v);
+
 const formSchema = z
   .object({
     type: z.enum(["debt", "loan"]),
+    // Basic info
     creditorName: z
       .string()
       .min(2, { message: "שם הנושה חייב להכיל לפחות 2 תווים." }),
@@ -42,20 +52,32 @@ const formSchema = z
     amount: z.coerce
       .number()
       .positive({ message: "הסכום חייב להיות מספר חיובי." }),
-    originalAmount: z.coerce
-      .number()
-      .positive({ message: "הסכום חייב להיות מספר חיובי." })
-      .optional(),
     startDate: dateStringSchema.optional().or(z.literal("")),
     dueDate: dateStringSchema.min(1, { message: "יש להזין תאריך יעד." }),
-    interestRate: z.coerce
-      .number()
-      .min(0, { message: "הריבית לא יכולה להיות שלילית." })
-      .optional(),
+
+    // Creditor Details
+    creditorPhone: z.string().optional(),
+    creditorEmail: z.string().email({ message: "כתובת אימייל לא תקינה." }).optional().or(z.literal("")),
+    accountNumber: z.string().optional(),
+    paymentUrl: z.string().url({ message: "כתובת אינטרנט לא תקינה." }).optional().or(z.literal("")),
+
+    // Terms & Classification
+    originalAmount: optionalNumber,
+    category: z.string().optional(),
+    interestRate: optionalNumber,
+    interestType: z.string().optional(),
+    lateFee: optionalNumber,
+    collateral: z.string().optional(),
+    priority: z.string().optional(),
+    tags: z.string().optional(),
+
+    // Payment Settings
     paymentType: z.enum(["single", "installments"]),
-    numberOfPayments: z.coerce.number().positive().optional(),
-    nextPaymentAmount: z.coerce.number().positive().optional(),
+    numberOfPayments: optionalNumber,
+    nextPaymentAmount: optionalNumber,
     paymentMethod: z.string().optional(),
+    isAutoPay: z.boolean().default(false),
+    paymentFrequency: z.string().optional(),
   })
   .refine(
     data => {
@@ -85,6 +107,9 @@ export function TransactionForm({
 }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+        isAutoPay: false
+    }
   })
 
   const type = form.watch("type")
@@ -122,9 +147,19 @@ export function TransactionForm({
       form.reset({
         ...transaction,
         creditorName: transaction.creditor.name,
+        creditorPhone: transaction.creditor.phone ?? undefined,
+        creditorEmail: transaction.creditor.email ?? undefined,
         startDate: fromIsoDate(transaction.startDate),
         dueDate: fromIsoDate(transaction.dueDate),
         numberOfPayments: transaction.numberOfPayments ?? undefined,
+        originalAmount: transaction.originalAmount ?? undefined,
+        interestRate: transaction.interestRate ?? undefined,
+        lateFee: transaction.lateFee ?? undefined,
+        nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
+        tags: transaction.tags ?? undefined,
+        accountNumber: transaction.accountNumber ?? undefined,
+        paymentUrl: transaction.paymentUrl ?? undefined,
+        collateral: transaction.collateral ?? undefined
       })
     } else {
       const defaultDueDate = new Date()
@@ -132,17 +167,30 @@ export function TransactionForm({
 
       form.reset({
         type: fixedType || "debt",
+        paymentType: "single",
+        startDate: format(new Date(), "dd/MM/yyyy"),
+        dueDate: format(defaultDueDate, "dd/MM/yyyy"),
+        isAutoPay: false,
+        // Reset all other fields to empty/undefined
         creditorName: "",
+        creditorPhone: "",
+        creditorEmail: "",
         description: "",
         amount: undefined,
         originalAmount: undefined,
         interestRate: undefined,
-        paymentType: "single",
         nextPaymentAmount: undefined,
         numberOfPayments: undefined,
         paymentMethod: undefined,
-        startDate: format(new Date(), "dd/MM/yyyy"),
-        dueDate: format(defaultDueDate, "dd/MM/yyyy"),
+        accountNumber: "",
+        paymentUrl: "",
+        category: undefined,
+        interestType: undefined,
+        lateFee: undefined,
+        collateral: "",
+        paymentFrequency: "חודשי",
+        priority: "בינונית",
+        tags: "",
       })
     }
   }, [transaction, fixedType, form])
@@ -172,25 +220,38 @@ export function TransactionForm({
       status: transaction?.status || "active",
       creditor: {
         name: values.creditorName,
+        phone: values.creditorPhone || null,
+        email: values.creditorEmail || null
       },
       type: values.type,
       amount: values.amount,
-      originalAmount: values.originalAmount ?? values.amount,
-      description: values.description ?? null,
+      originalAmount: values.originalAmount ?? null,
+      description: values.description || null,
       startDate: isoStartDate || format(new Date(), 'yyyy-MM-dd'),
       dueDate: isoDueDate,
       paymentType: values.paymentType,
-      paymentMethod: values.paymentMethod ?? null,
+      paymentMethod: values.paymentMethod || null,
       interestRate: values.interestRate ?? null,
       nextPaymentAmount: values.nextPaymentAmount ?? null,
       numberOfPayments: values.numberOfPayments ?? null,
+      accountNumber: values.accountNumber || null,
+      paymentUrl: values.paymentUrl || null,
+      category: (values.category as Transaction['category']) || null,
+      interestType: (values.interestType as Transaction['interestType']) || null,
+      lateFee: values.lateFee ?? null,
+      collateral: values.collateral || null,
+      isAutoPay: values.isAutoPay,
+      paymentFrequency: (values.paymentFrequency as Transaction['paymentFrequency']) || null,
+      priority: (values.priority as Transaction['priority']) || null,
+      tags: values.tags || null,
     }
     onFinished(newOrUpdatedTransaction)
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        
         {!fixedType && (
           <FormField
             control={form.control}
@@ -202,13 +263,8 @@ export function TransactionForm({
                   <RadioGroup
                     onValueChange={value => {
                       field.onChange(value)
-                      form.reset({
-                        ...form.getValues(),
-                        type: value as "debt" | "loan",
-                        paymentType: value === "debt" ? "single" : "single",
-                      })
                     }}
-                    defaultValue={field.value}
+                    value={field.value}
                     className="flex space-x-4 space-x-reverse"
                     dir="rtl"
                     disabled={!!transaction}
@@ -236,258 +292,417 @@ export function TransactionForm({
             )}
           />
         )}
-
-        <FormField
-          control={form.control}
-          name="creditorName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {type === "loan" ? "שם המלווה" : "שם הנושה"}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={
-                    type === "loan"
-                      ? "לדוגמה: בנק לאומי, יעקב כהן"
-                      : "לדוגמה: בזק, ועד בית"
-                  }
-                  {...field}
-                  value={field.value ?? ""}
+        
+        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+          <AccordionItem value="item-1">
+            <AccordionTrigger>פרטים בסיסיים</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="creditorName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {type === "loan" ? "שם המלווה" : "שם הנושה"}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={
+                            type === "loan"
+                              ? "לדוגמה: בנק לאומי, יעקב כהן"
+                              : "לדוגמה: בזק, ועד בית"
+                          }
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>תיאור (אופציונלי)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="פרטים נוספים על ההתחייבות..."
-                  {...field}
-                  value={field.value ?? ""}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>תיאור (אופציונלי)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="פרטים נוספים על ההתחייבות..."
+                          {...field}
+                           value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {type === "loan" ? "סכום נותר לתשלום" : "סכום החוב"} (₪)
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="5,000"
-                    {...field}
-                    value={field.value ?? ""}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {type === "loan" ? "סכום נותר" : "סכום החוב"} (₪)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="5,000"
+                            {...field}
+                             value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="originalAmount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>סכום מקורי (אופציונלי)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="5,000"
-                    {...field}
-                    value={field.value ?? ""}
+                  <FormField
+                    control={form.control}
+                    name="originalAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>סכום מקורי (אופציונלי)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="5,000"
+                            {...field}
+                             value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                </div>
 
-        {type === "loan" && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="interestRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ריבית שנתית (%)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="0"
-                      {...field}
-                      value={field.value ?? ""}
+                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="startDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>תאריך התחלה</FormLabel>
+                            <FormControl>
+                            <Input
+                                placeholder="DD/MM/YYYY"
+                                {...field}
+                                value={field.value ?? ""}
+                            />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
-
-        <FormField
-          control={form.control}
-          name="paymentType"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>אופן תשלום</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="flex space-x-4 space-x-reverse"
-                  dir="rtl"
-                >
-                  <FormItem className="flex items-center space-x-2 space-x-reverse">
-                    <FormControl>
-                      <RadioGroupItem value="single" id="single" />
-                    </FormControl>
-                    <FormLabel htmlFor="single" className="font-normal">
-                      תשלום חד פעמי
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-x-reverse">
-                    <FormControl>
-                      <RadioGroupItem value="installments" id="installments" />
-                    </FormControl>
-                    <FormLabel htmlFor="installments" className="font-normal">
-                      תשלומים
-                    </FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {paymentType === "installments" && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="nextPaymentAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>החזר חודשי (₪)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="500"
-                      {...field}
-                      value={field.value ?? ""}
+                    <FormField
+                        control={form.control}
+                        name="dueDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
+                            <FormControl>
+                            <Input
+                                placeholder="DD/MM/YYYY"
+                                {...field}
+                                value={field.value ?? ""}
+                            />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="numberOfPayments"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>מספר תשלומים</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="12"
-                      {...field}
-                      value={field.value ?? ""}
+                </div>
+            </AccordionContent>
+          </AccordionItem>
+          
+          <AccordionItem value="item-2">
+            <AccordionTrigger>פרטי נושה (מורחב)</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+                 <FormField
+                  control={form.control}
+                  name="accountNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>מספר חשבון / אסמכתא</FormLabel>
+                      <FormControl><Input placeholder="123-456789" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                    control={form.control}
+                    name="creditorPhone"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>טלפון ליצירת קשר</FormLabel>
+                        <FormControl><Input type="tel" placeholder="050-1234567" {...field} value={field.value ?? ""} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
+                    <FormField
+                    control={form.control}
+                    name="creditorEmail"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>אימייל ליצירת קשר</FormLabel>
+                        <FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value ?? ""} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                 <FormField
+                  control={form.control}
+                  name="paymentUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>קישור לתשלום</FormLabel>
+                      <FormControl><Input type="url" placeholder="https://example.com/pay" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </AccordionContent>
+          </AccordionItem>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>תאריך התחלה</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="DD/MM/YYYY"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="dueDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {paymentType === "installments"
-                    ? "תאריך תשלום הבא"
-                    : "תאריך יעד"}
-                </FormLabel>
-                <FormControl>
-                   <Input
-                    placeholder="DD/MM/YYYY"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <FormField
-          control={form.control}
-          name="paymentMethod"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>אמצעי תשלום</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value ?? undefined}
-                dir="rtl"
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר אמצעי תשלום" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Bank Transfer">העברה בנקאית</SelectItem>
-                  <SelectItem value="Credit Card">כרטיס אשראי</SelectItem>
-                  <SelectItem value="Cash">מזומן</SelectItem>
-                  <SelectItem value="Other">אחר</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+           <AccordionItem value="item-3">
+            <AccordionTrigger>תנאים וסיווג</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                     <FormField
+                        control={form.control}
+                        name="interestRate"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>ריבית שנתית (%)</FormLabel>
+                            <FormControl>
+                                <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    <FormField
+                        control={form.control}
+                        name="interestType"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>סוג ריבית</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                <FormControl><SelectTrigger><SelectValue placeholder="בחר סוג" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="קבועה">קבועה</SelectItem>
+                                    <SelectItem value="משתנה">משתנה</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                </div>
+                 <FormField
+                  control={form.control}
+                  name="lateFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>עמלת פיגורים (₪)</FormLabel>
+                      <FormControl><Input type="number" placeholder="50" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="collateral"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>בטחונות</FormLabel>
+                      <FormControl><Input placeholder="לדוגמה: רכב, דירה" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                     <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>קטגוריה</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                <FormControl><SelectTrigger><SelectValue placeholder="בחר קטגוריה" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="דיור">דיור</SelectItem>
+                                    <SelectItem value="רכב">רכב</SelectItem>
+                                    <SelectItem value="לימודים">לימודים</SelectItem>
+                                    <SelectItem value="עסק">עסק</SelectItem>
+                                    <SelectItem value="אישי">אישי</SelectItem>
+                                    <SelectItem value="אחר">אחר</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    <FormField
+                        control={form.control}
+                        name="priority"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>עדיפות</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                <FormControl><SelectTrigger><SelectValue placeholder="בחר עדיפות" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="נמוכה">נמוכה</SelectItem>
+                                    <SelectItem value="בינונית">בינונית</SelectItem>
+                                    <SelectItem value="גבוהה">גבוהה</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                </div>
+                 <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>תגיות (מופרדות בפסיק)</FormLabel>
+                      <FormControl><Input placeholder="חשבונות, אישי, לטיפול..." {...field} value={field.value ?? ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-4">
+            <AccordionTrigger>הגדרות תשלום</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="paymentType"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormLabel>אופן תשלום</FormLabel>
+                        <FormControl>
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex space-x-4 space-x-reverse"
+                            dir="rtl"
+                            >
+                            <FormItem className="flex items-center space-x-2 space-x-reverse">
+                                <FormControl><RadioGroupItem value="single" id="single" /></FormControl>
+                                <FormLabel htmlFor="single" className="font-normal">תשלום חד פעמי</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-x-reverse">
+                                <FormControl><RadioGroupItem value="installments" id="installments" /></FormControl>
+                                <FormLabel htmlFor="installments" className="font-normal">תשלומים</FormLabel>
+                            </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    {paymentType === "installments" && (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                        control={form.control}
+                        name="nextPaymentAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>החזר חודשי (₪)</FormLabel>
+                            <FormControl><Input type="number" placeholder="500" {...field} value={field.value ?? ""} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="numberOfPayments"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>מספר תשלומים</FormLabel>
+                            <FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ""} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                    )}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                        control={form.control}
+                        name="paymentMethod"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>אמצעי תשלום</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                <FormControl><SelectTrigger><SelectValue placeholder="בחר אמצעי תשלום" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Bank Transfer">העברה בנקאית</SelectItem>
+                                    <SelectItem value="Credit Card">כרטיס אשראי</SelectItem>
+                                    <SelectItem value="Cash">מזומן</SelectItem>
+                                    <SelectItem value="Other">אחר</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="paymentFrequency"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>תדירות תשלום</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                    <FormControl><SelectTrigger><SelectValue placeholder="בחר תדירות" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="יומי">יומי</SelectItem>
+                                        <SelectItem value="שבועי">שבועי</SelectItem>
+                                        <SelectItem value="דו-שבועי">דו-שבועי</SelectItem>
+                                        <SelectItem value="חודשי">חודשי</SelectItem>
+                                        <SelectItem value="רבעוני">רבעוני</SelectItem>
+                                        <SelectItem value="שנתי">שנתי</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                    </div>
+                    <FormField
+                        control={form.control}
+                        name="isAutoPay"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-end space-x-3 space-y-0 rounded-md border p-4 space-x-reverse">
+                            <FormControl>
+                                <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none text-right">
+                                <FormLabel>תשלום אוטומטי (הוראת קבע)</FormLabel>
+                            </div>
+                           
+                            </FormItem>
+                        )}
+                    />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
         <Button type="submit" className="w-full">
           <PlusCircle className="ms-2 h-4 w-4" />
           {transaction
