@@ -59,7 +59,6 @@ export async function askAssistant(input: AssistantInput): Promise<AssistantOutp
 const prompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantInputSchema },
-  output: { schema: AssistantOutputSchema },
   prompt: `אתה "DebtWise", יועץ פיננסי וירטואלי מומחה. המטרה שלך היא לא רק לענות על שאלות, אלא לספק תובנות פרואקטיביות, לזהות דפוסים ולהציע אסטרטגיות שיעזרו למשתמש לנהל את ההתחייבויות שלו בצורה חכמה ויעילה.
 
 תמיד תענה בעברית. השתמש בטון מקצועי, מעודד וברור.
@@ -106,8 +105,14 @@ const prompt = ai.definePrompt({
 **כללי ברזל:**
 *   **התמקדות:** ענה רק על שאלות שקשורות לניהול חובות והלוואות. אם השאלה לא קשורה, השב בנימוס שזה מחוץ לתחום ההתמחות שלך.
 *   **אל תמציא נתונים:** כל התשובות שלך חייבות להתבסס אך ורק על הנתונים שסופקו.
+*   **פורמט פלט:** חובה להחזיר אובייקט JSON בלבד, ללא שום טקסט או הסבר נוסף. האובייקט חייב להתאים למבנה הבא:
+  \`\`\`json
+  {
+    "response": "התשובה המפורטת שלך כאן"
+  }
+  \`\`\`
 
-עכשיו, נתח את המידע וספק תשובה מקיפה וחכמה.`,
+עכשיו, נתח את המידע וספק תשובה מקיפה וחכמה בתוך אובייקט ה-JSON.`,
 });
 
 const assistantFlow = ai.defineFlow(
@@ -117,7 +122,18 @@ const assistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    const llmResponse = await prompt(input);
+    const responseText = llmResponse.text;
+
+    try {
+        const cleanedJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanedJsonString);
+        return AssistantOutputSchema.parse(parsed);
+    } catch (e) {
+        console.error("Failed to parse AI JSON response:", e, "Raw response:", responseText);
+        // Fallback: if parsing fails, it might be that the model just returned the string directly.
+        // Let's try to wrap it in the expected object structure.
+        return { response: responseText };
+    }
   }
 );
