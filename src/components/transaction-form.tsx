@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -116,6 +116,9 @@ export function TransactionForm({
         isAutoPay: false
     }
   })
+
+  const [isStartDatePickerOpen, setStartDatePickerOpen] = useState(false);
+  const [isDueDatePickerOpen, setDueDatePickerOpen] = useState(false);
 
   const type = form.watch("type")
   const paymentType = form.watch("paymentType")
@@ -364,7 +367,7 @@ export function TransactionForm({
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
                             <FormLabel>תאריך התחלה</FormLabel>
-                            <Popover>
+                            <Popover open={isStartDatePickerOpen} onOpenChange={setStartDatePickerOpen}>
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
@@ -387,6 +390,7 @@ export function TransactionForm({
                                     if(date) {
                                       field.onChange(format(date, "dd/MM/yyyy"));
                                     }
+                                    setStartDatePickerOpen(false);
                                   }}
                                   initialFocus
                                 />
@@ -402,7 +406,7 @@ export function TransactionForm({
                         render={({ field }) => (
                            <FormItem className="flex flex-col">
                             <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
-                             <Popover>
+                             <Popover open={isDueDatePickerOpen} onOpenChange={setDueDatePickerOpen}>
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
@@ -425,6 +429,7 @@ export function TransactionForm({
                                     if(date) {
                                       field.onChange(format(date, "dd/MM/yyyy"));
                                     }
+                                    setDueDatePickerOpen(false);
                                   }}
                                   initialFocus
                                 />
