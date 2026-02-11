@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Heebo', 'sans-serif'],
-        headline: ['Assistant', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        headline: ['Space Grotesk', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {

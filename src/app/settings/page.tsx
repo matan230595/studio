@@ -10,95 +10,123 @@ import { Input } from '@/components/ui/input';
 import { AppLogo } from '@/components/app-logo';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const LOGO_STORAGE_KEY = 'app-logo';
-const NOTIFICATION_SETTINGS_KEY = 'notification-settings';
-
+type UserSettings = {
+    logoDataUrl?: string | null;
+    notifications?: {
+        email: boolean;
+        push: boolean;
+    }
+}
 
 export default function SettingsPage() {
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [currentLogo, setCurrentLogo] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const settingsDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'users', user.uid, 'settings', 'appSettings');
+    }, [user, firestore]);
+
+    const { data: settingsData, isLoading: isLoadingSettings } = useDoc<UserSettings>(settingsDocRef);
+    
+    const [currentLogo, setCurrentLogo] = useState<string | null>(null);
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [pushNotifications, setPushNotifications] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-        try {
-            setCurrentLogo(localStorage.getItem(LOGO_STORAGE_KEY));
-            const savedSettings = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
-            if (savedSettings) {
-                const { email, push } = JSON.parse(savedSettings);
-                setEmailNotifications(email ?? true);
-                setPushNotifications(push ?? false);
-            }
-        } catch (error) {
-            console.error("Failed to read from localStorage:", error);
+        if (settingsData) {
+            setCurrentLogo(settingsData.logoDataUrl ?? null);
+            setEmailNotifications(settingsData.notifications?.email ?? true);
+            setPushNotifications(settingsData.notifications?.push ?? false);
+        } else {
+             // Set default values if no settings doc exists
+            setCurrentLogo(null);
+            setEmailNotifications(true);
+            setPushNotifications(false);
         }
-    }, []);
+    }, [settingsData]);
+
 
     const handleSaveSettings = () => {
-        try {
-            localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify({ email: emailNotifications, push: pushNotifications }));
-            toast({
-                title: "ההגדרות נשמרו",
-                description: "העדפות ההתראות שלך עודכנו.",
-            });
-        } catch (error) {
-            console.error("Failed to save to localStorage:", error);
-            toast({
-                title: "שגיאה בשמירת ההגדרות",
-                description: "לא ניתן היה לשמור את ההעדפות שלך.",
-                variant: 'destructive'
-            });
-        }
+        if (!settingsDocRef) return;
+        const newSettings = {
+            notifications: {
+                email: emailNotifications,
+                push: pushNotifications
+            }
+        };
+
+        setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+
+        toast({
+            title: "ההגדרות נשמרו",
+            description: "העדפות ההתראות שלך עודכנו.",
+        });
     };
 
     const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!settingsDocRef) return;
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const dataUrl = e.target?.result as string;
-                try {
-                  localStorage.setItem(LOGO_STORAGE_KEY, dataUrl);
-                  setCurrentLogo(dataUrl);
-                  toast({
-                      title: "הלוגו עודכן",
-                      description: "הלוגו החדש של המערכת נשמר.",
-                  });
-                  window.dispatchEvent(new CustomEvent('logo-updated'));
-                } catch (error) {
-                  console.error("Failed to save to localStorage:", error);
-                   toast({
-                        title: "שגיאה בשמירת הלוגו",
-                        description: "לא היתה אפשרות לשמור את הלוגו. ייתכן שהאחסון מלא.",
-                        variant: 'destructive'
-                    });
-                }
+                setCurrentLogo(dataUrl);
+                setDocumentNonBlocking(settingsDocRef, { logoDataUrl: dataUrl }, { merge: true });
+                toast({
+                    title: "הלוגו עודכן",
+                    description: "הלוגו החדש של המערכת נשמר.",
+                });
             };
+            reader.onerror = () => {
+                toast({
+                    title: "שגיאה בקריאת הקובץ",
+                    variant: 'destructive'
+                });
+            }
             reader.readAsDataURL(file);
         }
     };
 
     const handleRemoveLogo = () => {
-        try {
-          localStorage.removeItem(LOGO_STORAGE_KEY);
-          setCurrentLogo(null);
-          toast({
-              title: "הלוגו הוסר",
-              description: "הלוגו של המערכת אופס לברירת המחדל.",
-              variant: "destructive"
-          });
-          window.dispatchEvent(new CustomEvent('logo-updated'));
-        } catch (error) {
-            console.error("Failed to remove from localStorage:", error);
-        }
+        if (!settingsDocRef) return;
+        setCurrentLogo(null);
+        setDocumentNonBlocking(settingsDocRef, { logoDataUrl: null }, { merge: true });
+        toast({
+          title: "הלוגו הוסר",
+          description: "הלוגו של המערכת אופס לברירת המחדל.",
+          variant: "destructive"
+        });
     };
 
+
+  if (isLoadingSettings && !isMounted) {
+      return (
+        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
+            {[...Array(3)].map((_, i) => (
+                 <Card key={i}>
+                    <CardHeader>
+                        <Skeleton className="h-7 w-40" />
+                        <Skeleton className="h-5 w-80 mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-20 w-full" />
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+      );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
@@ -122,7 +150,7 @@ export default function SettingsPage() {
                  <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
                     <div className='flex items-center gap-4'>
                         <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted">
-                           {isMounted && currentLogo ? 
+                           {currentLogo ? 
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={currentLogo} alt="Current Logo" className="h-full w-full object-contain" /> 
                             : <Globe className="h-6 w-6 text-muted-foreground" /> }
@@ -133,7 +161,7 @@ export default function SettingsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                         {isMounted && currentLogo && (
+                         {currentLogo && (
                             <Button variant="ghost" size="icon" onClick={handleRemoveLogo}>
                                 <Trash2 className="h-5 w-5 text-destructive" />
                                 <span className="sr-only">הסר לוגו</span>
@@ -215,7 +243,7 @@ export default function SettingsPage() {
               <div className="space-y-0.5">
                 <Label htmlFor="push-notifications" className="text-base">התראות דחיפה (Push)</Label>
                 <p className="text-sm text-muted-foreground">
-                  קבל התראות בזמן אמת ישירות למכשיר שלך.
+                  קבל התראות בזמן אמת ישירות למכשיר שלך (לא נתמך כרגע).
                 </p>
               </div>
             </div>
@@ -223,6 +251,7 @@ export default function SettingsPage() {
               id="push-notifications"
               checked={pushNotifications}
               onCheckedChange={setPushNotifications}
+              disabled
             />
           </div>
         </CardContent>

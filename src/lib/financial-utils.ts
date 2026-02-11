@@ -70,11 +70,13 @@ export function calculateSpendingByCategory(transactions: Transaction[]): Record
       if (!acc[t.category]) {
         acc[t.category] = 0;
       }
-      // Assuming all transactions are debits against the budget
-      if (t.type === 'debt') {
+      
+      // For debts and single-payment loans, count the full amount.
+      if (t.type === 'debt' || (t.type === 'loan' && t.paymentType === 'single')) {
          acc[t.category] += t.amount;
-      } else if (t.type === 'loan' && t.nextPaymentAmount) {
-         // For loans, we count the monthly payment towards the budget
+      } 
+      // For installment loans, count the monthly payment amount.
+      else if (t.type === 'loan' && t.paymentType === 'installments' && t.nextPaymentAmount) {
          acc[t.category] += t.nextPaymentAmount;
       }
     }
