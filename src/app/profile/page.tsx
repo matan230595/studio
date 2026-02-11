@@ -46,7 +46,7 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
       <header>
         <div className="flex items-center gap-3">
-          <AppLogo className="h-8 w-8 text-primary" />
+          <AppLogo className="h-10 w-10 text-primary" />
           <h1 className="font-headline text-3xl font-bold tracking-tight">
             פרופיל משתמש
           </h1>

@@ -292,7 +292,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
       <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2 text-right">
         <div>
           <div className="flex items-center gap-3">
-             <AppLogo className="h-8 w-8 text-primary" />
+             <AppLogo className="h-10 w-10 text-primary" />
             <h1 className="font-headline text-3xl font-bold tracking-tight">
               {pageTitle}
             </h1>
