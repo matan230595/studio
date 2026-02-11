@@ -17,7 +17,7 @@ import {
   SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut, Sparkles, Menu, Wallet } from 'lucide-react';
+import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut, Sparkles, Menu, Wallet, ClipboardList } from 'lucide-react';
 import { useAuth, useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from './ui/button';
@@ -114,6 +114,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuButton isActive={pathname.startsWith('/budget')} tooltip={{children: 'ניהול תקציב', side: 'left'}}>
                   <Wallet />
                   <span>ניהול תקציב</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+               <Link href="/strategies">
+                <SidebarMenuButton isActive={pathname.startsWith('/strategies')} tooltip={{children: 'אסטרטגיות פירעון', side: 'left'}}>
+                  <ClipboardList />
+                  <span>אסטרטגיות פירעון</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
