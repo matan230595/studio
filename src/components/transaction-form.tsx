@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, CalendarIcon } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { Switch } from "@/components/ui/switch"
 import {
   Accordion,
@@ -37,10 +39,10 @@ import { format, parse, addMonths } from "date-fns"
 import { Transaction } from "@/lib/data"
 import { mapTransactionToFormDefaults } from "@/lib/transactionFormMapper"
 import { PAYMENT_METHODS } from "@/lib/transactionFormMapper"
+import { cn } from "@/lib/utils"
 
-const dateStringSchema = z
-  .string()
-  .regex(/^\d{2}\/\d{2}\/\d{4}$/, "התאריך חייב להיות בפורמט DD/MM/YYYY")
+const optionalDateString = z.string().optional().or(z.literal(""));
+const requiredDateString = z.string().min(1, { message: "יש להזין תאריך יעד." });
 
 const optionalNumber = z.coerce.number().positive().optional().or(z.literal("")).transform(v => v === "" ? undefined : v);
 
@@ -55,8 +57,8 @@ const formSchema = z
     amount: z.coerce
       .number()
       .positive({ message: "הסכום חייב להיות מספר חיובי." }),
-    startDate: dateStringSchema.optional().or(z.literal("")),
-    dueDate: dateStringSchema.min(1, { message: "יש להזין תאריך יעד." }),
+    startDate: optionalDateString,
+    dueDate: requiredDateString,
 
     // Creditor Details
     creditorPhone: z.string().optional(),
@@ -136,10 +138,8 @@ export function TransactionForm({
 
   React.useEffect(() => {
     if (transaction) {
-      // Use the robust mapping function to set form values safely
       form.reset(mapTransactionToFormDefaults(transaction));
     } else {
-      // Logic for creating a new transaction remains the same
       const defaultDueDate = new Date()
       defaultDueDate.setMonth(defaultDueDate.getMonth() + 1)
 
@@ -362,34 +362,76 @@ export function TransactionForm({
                         control={form.control}
                         name="startDate"
                         render={({ field }) => (
-                        <FormItem>
+                          <FormItem className="flex flex-col">
                             <FormLabel>תאריך התחלה</FormLabel>
-                            <FormControl>
-                            <Input
-                                placeholder="DD/MM/YYYY"
-                                {...field}
-                                value={field.value ?? ""}
-                            />
-                            </FormControl>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full justify-between text-right font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <span>{field.value || "בחר תאריך"}</span>
+                                    <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value ? parse(field.value, "dd/MM/yyyy", new Date()) : undefined}
+                                  onSelect={(date) => {
+                                    if(date) {
+                                      field.onChange(format(date, "dd/MM/yyyy"));
+                                    }
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
                             <FormMessage />
-                        </FormItem>
+                          </FormItem>
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="dueDate"
                         render={({ field }) => (
-                        <FormItem>
+                           <FormItem className="flex flex-col">
                             <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
-                            <FormControl>
-                            <Input
-                                placeholder="DD/MM/YYYY"
-                                {...field}
-                                value={field.value ?? ""}
-                            />
-                            </FormControl>
+                             <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full justify-between text-right font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <span>{field.value || "בחר תאריך"}</span>
+                                    <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value ? parse(field.value, "dd/MM/yyyy", new Date()) : undefined}
+                                  onSelect={(date) => {
+                                    if(date) {
+                                      field.onChange(format(date, "dd/MM/yyyy"));
+                                    }
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
                             <FormMessage />
-                        </FormItem>
+                          </FormItem>
                         )}
                     />
                 </div>

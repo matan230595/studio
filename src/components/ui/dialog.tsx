@@ -43,10 +43,8 @@ const DialogContent = React.forwardRef<
       )}
       onPointerDownOutside={(e) => {
         const target = e.target as HTMLElement;
-        if (
-          target.closest("[data-radix-popper-content-wrapper]") ||
-          target.closest(".rdp")
-        ) {
+        // Prevent closing the dialog when clicking inside a Popover (used for date picker)
+        if (target.closest("[data-radix-popper-content-wrapper]")) {
           e.preventDefault();
         }
       }}
