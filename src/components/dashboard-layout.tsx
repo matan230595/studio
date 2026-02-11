@@ -70,7 +70,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader>
            <div className="flex items-center justify-between gap-3 p-2">
             <div className="flex items-center gap-3">
-              <AppLogo />
+              <AppLogo className="h-10 w-10" />
               <h1 className="font-headline text-2xl font-bold text-sidebar-primary-foreground group-data-[collapsible=icon]:hidden">DebtWise</h1>
             </div>
           </div>

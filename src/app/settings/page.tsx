@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Globe, Mail, Bell, Upload, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { AppLogo } from '@/components/app-logo';
 
 const LOGO_STORAGE_KEY = 'app-logo';
 
@@ -78,9 +79,12 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
       <header>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">
-          הגדרות
-        </h1>
+        <div className="flex items-center gap-3">
+          <AppLogo className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-3xl font-bold tracking-tight">
+            הגדרות
+          </h1>
+        </div>
         <p className="text-muted-foreground">
           נהל את הגדרות המערכת והחשבון שלך.
         </p>

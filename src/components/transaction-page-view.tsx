@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, Sheet, Wallet, Repeat, Calendar, FileText, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, MoreHorizontal, Wallet, Calendar, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +39,7 @@ import { Skeleton } from './ui/skeleton';
 import { TransactionDetails } from './transaction-details';
 import { Progress } from './ui/progress';
 import { DaysToDueBadge } from './days-to-due-badge';
+import { AppLogo } from './app-logo';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -290,9 +291,12 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2 text-right">
         <div>
-          <h1 className="font-headline text-3xl font-bold tracking-tight">
-            {pageTitle}
-          </h1>
+          <div className="flex items-center gap-3">
+             <AppLogo className="h-8 w-8 text-primary" />
+            <h1 className="font-headline text-3xl font-bold tracking-tight">
+              {pageTitle}
+            </h1>
+          </div>
           <p className="text-muted-foreground">
             {pageDescription}
           </p>

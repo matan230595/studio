@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { differenceInDays, formatDistanceToNowStrict } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { AppLogo } from '@/components/app-logo';
 
 const activityIcons: Record<string, React.ReactElement> = {
     paid: <BadgeCheck className="h-5 w-5 text-green-500" />,
@@ -105,9 +106,12 @@ export default function NotificationsPage() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
       <header>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">
-          התראות ופיד פעילות
-        </h1>
+        <div className="flex items-center gap-3">
+          <AppLogo className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-3xl font-bold tracking-tight">
+            התראות ופיד פעילות
+          </h1>
+        </div>
         <p className="text-muted-foreground">
           כל העדכונים והתזכורות במקום אחד כדי לעזור לך להישאר מעודכן.
         </p>

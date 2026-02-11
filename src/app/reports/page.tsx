@@ -9,6 +9,7 @@ import type { Transaction } from '@/lib/data';
 import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bell } from "lucide-react";
+import { AppLogo } from "@/components/app-logo";
 
 const PIE_COLORS_STATUS = ["#3b82f6", "#ef4444", "#22c55e"]; // Blue, Red, Green
 const PIE_COLORS_TYPE = ["#8b5cf6", "#f97316"]; // Purple, Orange
@@ -102,9 +103,12 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
       <header>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">
-          דוחות וניתוחים
-        </h1>
+        <div className="flex items-center gap-3">
+          <AppLogo className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-3xl font-bold tracking-tight">
+            דוחות וניתוחים
+          </h1>
+        </div>
         <p className="text-muted-foreground">
           צפה בדוחות וניתוחים על מצב ההתחייבויות שלך.
         </p>

@@ -36,6 +36,7 @@ import {
   getUrgentItem,
 } from '@/lib/financial-utils';
 import { DaysToDueBadge } from '@/components/days-to-due-badge';
+import { AppLogo } from '@/components/app-logo';
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -137,9 +138,12 @@ export default function Dashboard() {
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <div className="flex items-center justify-between">
         <header className="text-right">
-          <h1 className="font-headline text-3xl font-bold tracking-tight">
-            ברוך הבא, {user?.displayName || 'משתמש'}!
-          </h1>
+          <div className="flex items-center gap-3">
+            <AppLogo className="h-8 w-8 text-primary" />
+            <h1 className="font-headline text-3xl font-bold tracking-tight">
+              ברוך הבא, {user?.displayName || 'משתמש'}!
+            </h1>
+          </div>
           <p className="text-muted-foreground">הנה סיכום מצב ההתחייבויות שלך.</p>
         </header>
         <div className="flex items-center gap-2">

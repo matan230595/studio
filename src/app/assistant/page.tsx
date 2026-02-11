@@ -13,6 +13,7 @@ import { askAssistant } from '@/ai/flows/assistant-flow';
 import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateFinancialSummary, getLateTransactions, getUpcomingPayments } from '@/lib/financial-utils';
+import { AppLogo } from '@/components/app-logo';
 
 type Message = {
   id: string;
@@ -109,7 +110,10 @@ export default function AssistantPage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 h-full max-h-[calc(100vh-2rem)]">
       <header>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">עוזר AI</h1>
+        <div className="flex items-center gap-3">
+          <AppLogo className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-3xl font-bold tracking-tight">עוזר AI</h1>
+        </div>
         <p className="text-muted-foreground">שאל שאלות וקבל תובנות על המצב הפיננסי שלך. העוזר גם יקריא לך את התשובות.</p>
       </header>
       <Card className="flex flex-1 flex-col">

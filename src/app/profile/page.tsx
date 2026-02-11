@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AppLogo } from '@/components/app-logo';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -44,9 +45,12 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
       <header>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">
-          פרופיל משתמש
-        </h1>
+        <div className="flex items-center gap-3">
+          <AppLogo className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-3xl font-bold tracking-tight">
+            פרופיל משתמש
+          </h1>
+        </div>
         <p className="text-muted-foreground">
           פרטי הפרופיל שלך כפי שמופיעים במערכת.
         </p>
