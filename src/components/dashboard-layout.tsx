@@ -73,7 +73,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <AppLogo />
               <h1 className="font-headline text-2xl font-bold text-sidebar-primary-foreground group-data-[collapsible=icon]:hidden">DebtWise</h1>
             </div>
-             <SidebarTrigger className="hidden md:flex" />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -165,8 +164,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
-            <SidebarTrigger className="md:hidden">
-              <Menu />
+            <SidebarTrigger>
+              <Menu className="h-5 w-5" />
             </SidebarTrigger>
             <div className="w-full flex-1">
               {/* You can add a global search bar here if you want */}

@@ -12,31 +12,44 @@ const DefaultLogo = () => (
 
 export function AppLogo() {
   const [logo, setLogo] = useState<string | null>(null);
-  // Use a state to ensure we're on the client before accessing localStorage
-  const [isClient, setIsClient] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
-    setIsClient(true);
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (isClient) {
+    if (isMounted) {
       const handleStorageChange = () => {
-        setLogo(localStorage.getItem(LOGO_STORAGE_KEY));
+        try {
+          setLogo(localStorage.getItem(LOGO_STORAGE_KEY));
+        } catch (error) {
+            console.error("Could not access localStorage:", error);
+            setLogo(null);
+        }
       };
-      handleStorageChange(); // Initial load
+      
+      handleStorageChange();
+      
+      const storageEventHandler = (e: StorageEvent) => {
+        if (e.key === LOGO_STORAGE_KEY) {
+          handleStorageChange();
+        }
+      };
+
       window.addEventListener('logo-updated', handleStorageChange);
-      window.addEventListener('storage', handleStorageChange);
+      window.addEventListener('storage', storageEventHandler);
+
       return () => {
         window.removeEventListener('logo-updated', handleStorageChange);
-        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('storage', storageEventHandler);
       };
     }
-  }, [isClient]);
+  }, [isMounted]);
   
-  if (!isClient) {
-    // To avoid hydration mismatch, render a placeholder of the correct size 
-    // on the server and let the client-side effect fill it in.
-    return <div className="h-8 w-8" />;
+  if (!isMounted) {
+    // Render default logo on server and during initial client render to prevent hydration mismatch
+    return <DefaultLogo />;
   }
 
   if (logo) {
