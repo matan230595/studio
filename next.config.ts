@@ -30,9 +30,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['wav'],
-  },
+  serverExternalPackages: ['wav'],
 };
 
 export default nextConfig;
