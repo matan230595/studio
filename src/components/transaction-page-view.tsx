@@ -218,12 +218,11 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     const file = event.target.files?.[0];
     if (!file || !user || !firestore) return;
 
-    // Zod schema for a row in the CSV file. Looser than the main schema.
+    // Zod schema for a row in the CSV file.
     const csvRowSchema = z.object({
         creditorName: z.string().min(2, "שם הנושה חסר או קצר מדי."),
         amount: z.coerce.number().positive("הסכום חייב להיות מספר חיובי."),
         dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך היעד חייב להיות בפורמט YYYY-MM-DD"),
-        // Optional fields
         description: z.string().optional().nullable(),
         originalAmount: z.coerce.number().positive().optional().nullable(),
         startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
@@ -234,7 +233,17 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
         paymentMethod: z.string().optional().nullable(),
         category: z.enum(["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"]).optional().nullable(),
         isAutoPay: z.string().transform(val => val?.toLowerCase() === 'true').default('false'),
-    }).passthrough(); // Allow other columns, just ignore them.
+        accountNumber: z.string().optional().nullable(),
+        paymentUrl: z.string().url({ message: "כתובת אינטרנט לא תקינה." }).optional().nullable(),
+        interestType: z.enum(['קבועה', 'משתנה']).optional().nullable(),
+        lateFee: z.coerce.number().positive().optional().nullable(),
+        collateral: z.string().optional().nullable(),
+        paymentFrequency: z.enum(['יומי', 'שבועי', 'דו-שבועי', 'חודשי', 'רבעוני', 'שנתי']).optional().nullable(),
+        priority: z.enum(['נמוכה', 'בינונית', 'גבוהה']).optional().nullable(),
+        tags: z.string().optional().nullable(),
+        creditorPhone: z.string().optional().nullable(),
+        creditorEmail: z.string().email().optional().nullable(),
+    }).passthrough();
 
 
     Papa.parse(file, {
@@ -252,7 +261,11 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 if (validation.success) {
                     const validatedData = validation.data;
                     const newTransaction = {
-                      creditor: { name: validatedData.creditorName },
+                      creditor: { 
+                          name: validatedData.creditorName,
+                          phone: validatedData.creditorPhone ?? null,
+                          email: validatedData.creditorEmail ?? null
+                      },
                       userId: user.uid,
                       type: transactionType,
                       amount: validatedData.amount,
@@ -267,11 +280,10 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                       nextPaymentAmount: validatedData.nextPaymentAmount ?? null,
                       paymentMethod: validatedData.paymentMethod ?? null,
                       category: validatedData.category ?? null,
-                      // Add other fields that might be in the CSV
                       accountNumber: validatedData.accountNumber ?? null,
                       paymentUrl: validatedData.paymentUrl ?? null,
                       interestType: validatedData.interestType ?? null,
-                      lateFee: validatedData.lateFee ? parseFloat(validatedData.lateFee) : null,
+                      lateFee: validatedData.lateFee ?? null,
                       collateral: validatedData.collateral ?? null,
                       paymentFrequency: validatedData.paymentFrequency ?? null,
                       priority: validatedData.priority ?? null,
