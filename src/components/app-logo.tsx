@@ -1,12 +1,7 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-
-type UserSettings = {
-  logoDataUrl?: string | null;
-}
 
 const DefaultLogo = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-full w-full text-sidebar-primary">
@@ -18,29 +13,30 @@ const DefaultLogo = () => (
 export function AppLogo({ className }: { className?: string }) {
   const [logo, setLogo] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const { user } = useUser();
-  const firestore = useFirestore();
 
-  const settingsDocRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return doc(firestore, 'users', user.uid, 'settings', 'appSettings');
-  }, [user, firestore]);
-
-  const { data: settingsData } = useDoc<UserSettings>(settingsDocRef);
-  
   useEffect(() => {
     setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      if (settingsData) {
-        setLogo(settingsData.logoDataUrl ?? null);
-      } else {
-        setLogo(null);
-      }
+    // Load the logo from localStorage on initial mount.
+    const savedLogo = localStorage.getItem('appLogo');
+    if (savedLogo) {
+      setLogo(savedLogo);
     }
-  }, [isMounted, settingsData]);
+    
+    // Create a listener for storage changes.
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'appLogo') {
+        setLogo(event.newValue);
+      }
+    };
+    
+    // Add the event listener.
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Clean up the listener on component unmount.
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
   
   if (!isMounted) {
     // Render a placeholder to avoid hydration mismatch and layout shift.

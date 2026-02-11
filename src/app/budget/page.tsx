@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -136,15 +137,7 @@ export default function BudgetPage() {
   const { data: allTransactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsQuery);
 
   const { totalBudgeted, totalSpent, remainingAmount, spendingByCategory, budgetWithSpending } = useMemo(() => {
-    const monthStartDate = startOfMonth(new Date(currentMonth));
-    const monthEndDate = endOfMonth(new Date(currentMonth));
-
-    const currentMonthTransactions = allTransactions?.filter(t => {
-      const transactionDate = new Date(t.startDate || t.dueDate);
-      return transactionDate >= monthStartDate && transactionDate <= monthEndDate;
-    }) || [];
-    
-    const spendingByCategory = calculateSpendingByCategory(currentMonthTransactions);
+    const spendingByCategory = calculateSpendingByCategory(allTransactions || []);
     const totalSpent = Object.values(spendingByCategory).reduce((sum, amount) => sum + amount, 0);
 
     if (!budget) {
@@ -162,7 +155,7 @@ export default function BudgetPage() {
     });
 
     return { totalBudgeted, totalSpent, remainingAmount, spendingByCategory, budgetWithSpending };
-  }, [budget, allTransactions, currentMonth]);
+  }, [budget, allTransactions]);
   
   const isLoading = isBudgetLoading || isTransactionsLoading;
 

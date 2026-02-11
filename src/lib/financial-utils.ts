@@ -1,3 +1,4 @@
+
 import type { Transaction } from '@/lib/data';
 import { differenceInDays } from 'date-fns';
 
@@ -71,12 +72,8 @@ export function calculateSpendingByCategory(transactions: Transaction[]): Record
         acc[t.category] = 0;
       }
       
-      // For debts and single-payment loans, count the full amount.
-      if (t.type === 'debt' || (t.type === 'loan' && t.paymentType === 'single')) {
-         acc[t.category] += t.amount;
-      } 
       // For installment loans, count the monthly payment amount.
-      else if (t.type === 'loan' && t.paymentType === 'installments' && t.nextPaymentAmount) {
+      if (t.type === 'loan' && t.paymentType === 'installments' && t.nextPaymentAmount) {
          acc[t.category] += t.nextPaymentAmount;
       }
     }

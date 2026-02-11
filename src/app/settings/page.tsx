@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -10,17 +11,7 @@ import { Input } from '@/components/ui/input';
 import { AppLogo } from '@/components/app-logo';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type UserSettings = {
-    logoDataUrl?: string | null;
-    notifications?: {
-        email: boolean;
-        push: boolean;
-    }
-}
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -28,65 +19,72 @@ export default function SettingsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isMounted, setIsMounted] = useState(false);
     
-    const { user } = useUser();
-    const firestore = useFirestore();
-
-    const settingsDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return doc(firestore, 'users', user.uid, 'settings', 'appSettings');
-    }, [user, firestore]);
-
-    const { data: settingsData, isLoading: isLoadingSettings } = useDoc<UserSettings>(settingsDocRef);
-    
     const [currentLogo, setCurrentLogo] = useState<string | null>(null);
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [pushNotifications, setPushNotifications] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-        if (settingsData) {
-            setCurrentLogo(settingsData.logoDataUrl ?? null);
-            setEmailNotifications(settingsData.notifications?.email ?? true);
-            setPushNotifications(settingsData.notifications?.push ?? false);
-        } else {
-             // Set default values if no settings doc exists
-            setCurrentLogo(null);
-            setEmailNotifications(true);
-            setPushNotifications(false);
+        try {
+            const savedLogo = localStorage.getItem('appLogo');
+            if (savedLogo) {
+                setCurrentLogo(savedLogo);
+            }
+            const savedEmail = localStorage.getItem('emailNotifications');
+            if (savedEmail) {
+                setEmailNotifications(JSON.parse(savedEmail));
+            }
+            const savedPush = localStorage.getItem('pushNotifications');
+            if (savedPush) {
+                setPushNotifications(JSON.parse(savedPush));
+            }
+        } catch (error) {
+            console.error("Failed to parse settings from localStorage", error);
         }
-    }, [settingsData]);
+    }, []);
 
 
     const handleSaveSettings = () => {
-        if (!settingsDocRef) return;
-        const newSettings = {
-            notifications: {
-                email: emailNotifications,
-                push: pushNotifications
-            }
-        };
-
-        setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
-
-        toast({
-            title: "ההגדרות נשמרו",
-            description: "העדפות ההתראות שלך עודכנו.",
-        });
+        try {
+            localStorage.setItem('emailNotifications', JSON.stringify(emailNotifications));
+            localStorage.setItem('pushNotifications', JSON.stringify(pushNotifications));
+            toast({
+                title: "ההגדרות נשמרו",
+                description: "העדפות ההתראות שלך עודכנו.",
+            });
+        } catch (error) {
+             toast({
+                title: "שגיאה בשמירת הגדרות",
+                variant: 'destructive'
+            });
+        }
     };
 
     const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!settingsDocRef) return;
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const dataUrl = e.target?.result as string;
                 setCurrentLogo(dataUrl);
-                setDocumentNonBlocking(settingsDocRef, { logoDataUrl: dataUrl }, { merge: true });
-                toast({
-                    title: "הלוגו עודכן",
-                    description: "הלוגו החדש של המערכת נשמר.",
-                });
+                try {
+                    localStorage.setItem('appLogo', dataUrl);
+                    // Manually dispatch a storage event so other tabs (like the one with AppLogo) can update.
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'appLogo',
+                        newValue: dataUrl,
+                    }));
+                    toast({
+                        title: "הלוגו עודכן",
+                        description: "הלוגו החדש של המערכת נשמר.",
+                    });
+                } catch (error) {
+                    toast({
+                        title: "שגיאה בשמירת הלוגו",
+                        description: "יתכן והאחסון המקומי מלא.",
+                        variant: 'destructive'
+                    });
+                }
             };
             reader.onerror = () => {
                 toast({
@@ -99,9 +97,12 @@ export default function SettingsPage() {
     };
 
     const handleRemoveLogo = () => {
-        if (!settingsDocRef) return;
         setCurrentLogo(null);
-        setDocumentNonBlocking(settingsDocRef, { logoDataUrl: null }, { merge: true });
+        localStorage.removeItem('appLogo');
+         window.dispatchEvent(new StorageEvent('storage', {
+            key: 'appLogo',
+            newValue: null,
+        }));
         toast({
           title: "הלוגו הוסר",
           description: "הלוגו של המערכת אופס לברירת המחדל.",
@@ -110,7 +111,7 @@ export default function SettingsPage() {
     };
 
 
-  if (isLoadingSettings && !isMounted) {
+  if (!isMounted) {
       return (
         <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
             {[...Array(3)].map((_, i) => (
@@ -283,3 +284,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

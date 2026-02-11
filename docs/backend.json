@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -73,31 +74,6 @@
         }
       },
       "required": ["userId", "month", "categoryBudgets"]
-    },
-    "UserSettings": {
-      "title": "User Settings",
-      "type": "object",
-      "description": "Stores user-specific application settings like custom logo and notification preferences.",
-      "properties": {
-        "logoDataUrl": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "uri"
-        },
-        "notifications": {
-          "type": "object",
-          "properties": {
-            "email": {
-              "type": "boolean"
-            },
-            "push": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
     }
   },
   "auth": {
@@ -115,12 +91,6 @@
     "/users/{userId}/budgets/{month}": {
       "schema": { "$ref": "#/entities/Budget" },
       "description": "Stores a user's monthly budget. The document ID is the month in 'YYYY-MM' format."
-    },
-    "/users/{userId}/settings/appSettings": {
-      "schema": {
-        "$ref": "#/entities/UserSettings"
-      },
-      "description": "Stores a single document with user-specific settings."
     }
   }
 }
