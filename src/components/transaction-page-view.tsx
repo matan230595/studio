@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, MoreHorizontal, Wallet, Calendar, FileText } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, MoreHorizontal, Wallet, Calendar, FileText, ArrowUp, ArrowDown, Filter, X, FileUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { TransactionForm } from '@/components/transaction-form';
 import type { Transaction } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +47,8 @@ import { TransactionDetails } from './transaction-details';
 import { Progress } from './ui/progress';
 import { DaysToDueBadge } from './days-to-due-badge';
 import { AppLogo } from './app-logo';
+import { Input } from './ui/input';
+import Papa from 'papaparse';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -55,6 +64,11 @@ type TransactionPageViewProps = {
     entityNamePlural: string; // e.g., 'חובות'
 };
 
+type SortConfig = {
+  key: keyof Transaction | 'creditor.name' | null;
+  direction: 'ascending' | 'descending';
+}
+
 export function TransactionPageView({ pageTitle, pageDescription, transactionType, entityName, entityNamePlural }: TransactionPageViewProps) {
   const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('table');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
@@ -62,6 +76,10 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   const [deletingTransaction, setDeletingTransaction] = React.useState<Transaction | null>(null);
   const [detailsTransaction, setDetailsTransaction] = React.useState<Transaction | null>(null);
   
+  const [filters, setFilters] = React.useState({ status: 'all', category: 'all' });
+  const [sortConfig, setSortConfig] = React.useState<SortConfig>({ key: 'dueDate', direction: 'ascending' });
+  
+  const importFileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const { user } = useUser();
@@ -74,10 +92,71 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
   const { data: allTransactions, isLoading } = useCollection<Transaction>(transactionsQuery);
   
-  const transactions = React.useMemo(() => {
-    if (!allTransactions) return [];
-    return allTransactions.filter(t => t.type === transactionType);
-  }, [allTransactions, transactionType]);
+  const {processedTransactions, availableCategories} = React.useMemo(() => {
+    if (!allTransactions) return { processedTransactions: [], availableCategories: [] };
+    
+    let items = allTransactions.filter(t => t.type === transactionType);
+    const categories = [...new Set(items.map(t => t.category).filter(Boolean))] as string[];
+
+    // Filtering
+    if (filters.status !== 'all') {
+        items = items.filter(t => t.status === filters.status);
+    }
+    if (filters.category !== 'all') {
+        items = items.filter(t => t.category === filters.category);
+    }
+
+    // Sorting
+    if (sortConfig.key) {
+        items.sort((a, b) => {
+            const key = sortConfig.key;
+            let aValue: any;
+            let bValue: any;
+
+            if (key === 'creditor.name') {
+                aValue = a.creditor.name;
+                bValue = b.creditor.name;
+            } else {
+                aValue = a[key as keyof Transaction];
+                bValue = b[key as keyof Transaction];
+            }
+            
+            const dir = sortConfig.direction === 'ascending' ? 1 : -1;
+
+            if (aValue === null || aValue === undefined) return 1 * dir;
+            if (bValue === null || bValue === undefined) return -1 * dir;
+
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return (aValue - bValue) * dir;
+            }
+            if (key === 'dueDate' || key === 'startDate') {
+                const aDate = new Date(aValue as string).getTime();
+                const bDate = new Date(bValue as string).getTime();
+                return (aDate - bDate) * dir;
+            }
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                return aValue.localeCompare(bValue) * dir;
+            }
+            
+            return 0;
+        });
+    }
+
+    return { processedTransactions: items, availableCategories: categories };
+  }, [allTransactions, transactionType, filters, sortConfig]);
+
+  const requestSort = (key: keyof Transaction | 'creditor.name') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const renderSortIcon = (key: keyof Transaction | 'creditor.name') => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  }
 
   const handleFormFinished = (newTransaction: Transaction) => {
     if (!user || !firestore) return;
@@ -111,7 +190,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   }
 
   const handleExport = () => {
-    const dataToExport = transactions.map(t => ({
+    const dataToExport = processedTransactions.map(t => ({
         'שם': t.creditor.name,
         'תיאור': t.description,
         'סכום נוכחי': t.amount,
@@ -133,6 +212,51 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     });
   };
 
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !firestore) return;
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+            const collectionRef = collection(firestore, 'users', user.uid, 'transactions');
+            let successCount = 0;
+            results.data.forEach((row: any) => {
+                try {
+                    // This is a basic transformation. For a real app, this would need
+                    // extensive validation and error handling (e.g. using Zod).
+                    const newTransaction = {
+                        ...row,
+                        creditor: { name: row.creditorName },
+                        userId: user.uid,
+                        type: transactionType,
+                        amount: parseFloat(row.amount),
+                        originalAmount: row.originalAmount ? parseFloat(row.originalAmount) : null,
+                        interestRate: row.interestRate ? parseFloat(row.interestRate) : null,
+                        lateFee: row.lateFee ? parseFloat(row.lateFee) : null,
+                        nextPaymentAmount: row.nextPaymentAmount ? parseFloat(row.nextPaymentAmount) : null,
+                        numberOfPayments: row.numberOfPayments ? parseInt(row.numberOfPayments) : null,
+                        isAutoPay: row.isAutoPay?.toLowerCase() === 'true',
+                        status: row.status || 'active',
+                        paymentType: row.paymentType || 'single',
+                    };
+                    addDocumentNonBlocking(collectionRef, newTransaction);
+                    successCount++;
+                } catch(e) {
+                    console.error("Could not import row:", row, e);
+                }
+            });
+            toast({ title: "הייבוא הושלם", description: `${successCount} מתוך ${results.data.length} רשומות יובאו בהצלחה.` });
+        },
+        error: (error) => {
+            toast({ variant: 'destructive', title: "הייבוא נכשל", description: error.message });
+        }
+    });
+    // Reset file input
+    if(event.target) event.target.value = '';
+  };
+
   const renderEmptyState = () => (
     <div className="text-center py-16">
         <h3 className="text-xl font-semibold">אין עדיין {entityNamePlural}</h3>
@@ -142,17 +266,47 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
   const renderTable = () => {
     if (isLoading) return <Card><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
-    if (transactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
+    if (processedTransactions.length === 0 && (filters.status !== 'all' || filters.category !== 'all')) {
+        return (
+            <Card>
+                <CardContent className="text-center py-16">
+                    <h3 className="text-xl font-semibold">לא נמצאו תוצאות</h3>
+                    <p className="text-muted-foreground mt-2">נסה לשנות את הגדרות הסינון.</p>
+                    <Button variant="outline" className="mt-4" onClick={() => setFilters({ status: 'all', category: 'all'})}>
+                        <X className="ms-2 h-4 w-4" />
+                        נקה סינונים
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
+    if (processedTransactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
+    
     return (
     <Card>
       <CardContent className='pt-6'>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-right">{transactionType === 'loan' ? 'מלווה' : 'נושה'}</TableHead>
-              <TableHead className="hidden sm:table-cell text-right">סכום</TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('creditor.name')} className="px-2">
+                    {renderSortIcon('creditor.name')}
+                    {transactionType === 'loan' ? 'מלווה' : 'נושה'}
+                </Button>
+              </TableHead>
+              <TableHead className="hidden sm:table-cell text-right">
+                 <Button variant="ghost" onClick={() => requestSort('amount')} className="px-2">
+                    {renderSortIcon('amount')}
+                    סכום
+                </Button>
+              </TableHead>
               {transactionType === 'loan' && <TableHead className="hidden md:table-cell text-right">החזר חודשי</TableHead>}
-              <TableHead className="hidden md:table-cell text-right">תאריך יעד</TableHead>
+              <TableHead className="hidden md:table-cell text-right">
+                <Button variant="ghost" onClick={() => requestSort('dueDate')} className="px-2">
+                    {renderSortIcon('dueDate')}
+                    תאריך יעד
+                </Button>
+              </TableHead>
               <TableHead className="text-right">סטטוס</TableHead>
               <TableHead>
                 <span className="sr-only">פעולות</span>
@@ -160,7 +314,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
+            {processedTransactions.map((transaction) => (
               <TableRow key={transaction.id} className="group hover:bg-muted/50">
                 <TableCell className="text-right">
                   <div className="font-medium">{transaction.creditor.name}</div>
@@ -204,10 +358,10 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
   const renderCards = () => {
     if (isLoading) return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{[...Array(4)].map((_,i) => <Skeleton key={i} className="h-80 w-full"/>)}</div>
-    if (transactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
+    if (processedTransactions.length === 0) return <Card><CardContent>{renderEmptyState()}</CardContent></Card>
     return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {transactions.map(transaction => {
+      {processedTransactions.map(transaction => {
         const progress = transaction.originalAmount && transaction.originalAmount > 0 
             ? ((transaction.originalAmount - transaction.amount) / transaction.originalAmount) * 100 
             : null;
@@ -288,11 +442,11 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
   
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
-      <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-2 text-right">
+    <main dir="rtl" className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
+      <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-4 text-right">
         <div>
           <div className="flex items-center gap-3">
-             <AppLogo className="h-10 w-10 text-primary" />
+             <AppLogo className="h-12 w-12 text-primary" />
             <h1 className="font-headline text-3xl font-bold tracking-tight">
               {pageTitle}
             </h1>
@@ -301,7 +455,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
             {pageDescription}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
             <Dialog open={isFormOpen} onOpenChange={(isOpen) => {
                 setIsFormOpen(isOpen);
                 if (!isOpen) setEditingTransaction(null);
@@ -322,7 +476,15 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 <TransactionForm onFinished={handleFormFinished} transaction={editingTransaction} fixedType={transactionType} />
             </DialogContent>
             </Dialog>
-
+            <Button variant="outline" size="sm" onClick={() => importFileInputRef.current?.click()}>
+              <FileUp className="ms-2 h-4 w-4" />
+              ייבוא
+            </Button>
+            <Input type="file" ref={importFileInputRef} className="hidden" accept=".csv" onChange={handleFileImport} />
+             <Button variant="outline" size="sm" onClick={handleExport}>
+              <FileDown className="ms-2 h-4 w-4" />
+              ייצוא
+            </Button>
             <div className="flex items-center rounded-md bg-muted p-1">
               <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('table')} aria-label="תצוגת טבלה">
                 <List className="h-4 w-4" />
@@ -331,12 +493,43 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
-             <Button variant="outline" size="sm" onClick={handleExport}>
-              <FileDown className="ms-2 h-4 w-4" />
-              ייצוא
-            </Button>
         </div>
       </header>
+
+      <Card>
+        <CardHeader className="flex-row items-center gap-4 space-y-0">
+            <Filter className="w-5 h-5 text-muted-foreground" />
+            <CardTitle className="text-base">סינון ומיון</CardTitle>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+                <Label>סינון לפי סטטוס</Label>
+                <Select dir="rtl" value={filters.status} onValueChange={(value) => setFilters(f => ({...f, status: value}))}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="בחר סטטוס" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">כל הסטטוסים</SelectItem>
+                        <SelectItem value="active">פעיל</SelectItem>
+                        <SelectItem value="late">בפיגור</SelectItem>
+                        <SelectItem value="paid">שולם</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>סינון לפי קטגוריה</Label>
+                <Select dir="rtl" value={filters.category} onValueChange={(value) => setFilters(f => ({...f, category: value}))}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="בחר קטגוריה" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">כל הקטגוריות</SelectItem>
+                        {availableCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+        </CardContent>
+      </Card>
       
       {viewMode === 'table' ? renderTable() : renderCards()}
       

@@ -37,6 +37,7 @@ import {
 } from '@/lib/financial-utils';
 import { DaysToDueBadge } from '@/components/days-to-due-badge';
 import { AppLogo } from '@/components/app-logo';
+import { AiInsightCard } from '@/components/ai-insight-card';
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -73,7 +74,7 @@ export default function Dashboard() {
   const { stats, upcomingPaymentsChartData, urgentItem } = React.useMemo(() => {
     if (!transactions)
       return {
-        stats: { totalOwed: 0, monthlyRepayment: 0, totalLoans: 0, totalDebts: 0 },
+        stats: { totalOwed: 0, monthlyRepayment: 0, totalLoans: 0, totalDebts: 0, lateItems: 0, activeItems: 0 },
         upcomingPaymentsChartData: [],
         urgentItem: null,
       };
@@ -96,7 +97,10 @@ export default function Dashboard() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
         <header>
-          <Skeleton className="h-9 w-64" />
+          <div className="flex items-center gap-3">
+             <AppLogo className="h-10 w-10 text-primary" />
+            <Skeleton className="h-9 w-64" />
+          </div>
           <Skeleton className="h-5 w-80 mt-2" />
         </header>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -112,8 +116,8 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-        <div className="grid gap-6 md:grid-cols-5">
-          <Card className="md:col-span-3">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
             <CardHeader>
               <Skeleton className="h-7 w-48" />
             </CardHeader>
@@ -121,7 +125,7 @@ export default function Dashboard() {
               <Skeleton className="h-64 w-full" />
             </CardContent>
           </Card>
-          <Card className="md:col-span-2">
+          <Card>
             <CardHeader>
               <Skeleton className="h-7 w-32" />
             </CardHeader>
@@ -135,11 +139,11 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
+    <main dir="rtl" className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <div className="flex items-center justify-between">
         <header className="text-right">
           <div className="flex items-center gap-3">
-            <AppLogo className="h-10 w-10 text-primary" />
+            <AppLogo className="h-12 w-12 text-primary" />
             <h1 className="font-headline text-3xl font-bold tracking-tight">
               ברוך הבא, {user?.displayName || 'משתמש'}!
             </h1>
@@ -219,96 +223,100 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="text-right">
-            <CardTitle>7 התשלומים הקרובים</CardTitle>
-            <CardDescription>תצוגה ויזואלית של התשלומים הבאים שלך.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {upcomingPaymentsChartData.length > 0 ? (
-              <ChartContainer
-                config={{ סכום: { label: 'סכום', color: 'hsl(var(--primary))' } }}
-                className="h-[250px] w-full"
-              >
-                <BarChart
-                  data={upcomingPaymentsChartData}
-                  margin={{ top: 20, right: 0, bottom: 0, left: 0 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={value => `₪${value / 1000}k`}
-                  />
-                  <Tooltip cursor={true} content={<ChartTooltipContent indicator="dot" />} />
-                  <Bar dataKey="סכום" fill="var(--color-סכום)" radius={8} />
-                </BarChart>
-              </ChartContainer>
-            ) : (
-              <div className="h-[250px] flex flex-col items-center justify-center text-center text-sm text-muted-foreground">
-                <CheckCircle2 className="h-10 w-10 text-green-500 mb-2" />
-                <p>מעולה! אין תשלומים קרובים באופק.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="text-right">
-            <CardTitle className="flex items-center gap-2 justify-end">
-              פריט דחוף לטיפול
-              {urgentItem?.status === 'late' ? (
-                <AlertCircle className="h-5 w-5 text-destructive" />
-              ) : (
-                <Clock className="h-5 w-5 text-yellow-500" />
-              )}
-            </CardTitle>
-            <CardDescription>
-              {urgentItem?.status === 'late'
-                ? 'ההתחייבות הבאה עברה את מועד הפירעון.'
-                : 'התשלום הבא שלך מתקרב.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {urgentItem ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{urgentItem.creditor.name}</span>
-                  <Badge variant={urgentItem.status === 'late' ? 'destructive' : 'default'}>
-                    {urgentItem.type === 'loan' ? 'הלוואה' : 'חוב'}
-                  </Badge>
+      
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div className="grid gap-6 lg:col-span-3">
+             <AiInsightCard transactions={transactions} />
+            <Card>
+                <CardHeader className="text-right">
+                    <CardTitle>7 התשלומים הקרובים</CardTitle>
+                    <CardDescription>תצוגה ויזואלית של התשלומים הבאים שלך.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {upcomingPaymentsChartData.length > 0 ? (
+                    <ChartContainer
+                        config={{ סכום: { label: 'סכום', color: 'hsl(var(--primary))' } }}
+                        className="h-[250px] w-full"
+                    >
+                        <BarChart
+                        data={upcomingPaymentsChartData}
+                        margin={{ top: 20, right: 0, bottom: 0, left: 0 }}
+                        >
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            tickFormatter={value => `₪${value / 1000}k`}
+                        />
+                        <Tooltip cursor={true} content={<ChartTooltipContent indicator="dot" />} />
+                        <Bar dataKey="סכום" fill="var(--color-סכום)" radius={8} />
+                        </BarChart>
+                    </ChartContainer>
+                    ) : (
+                    <div className="h-[250px] flex flex-col items-center justify-center text-center text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-10 w-10 text-green-500 mb-2" />
+                        <p>מעולה! אין תשלומים קרובים באופק.</p>
+                    </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+        <Card className="lg:col-span-2">
+            <CardHeader className="text-right">
+                <CardTitle className="flex items-center gap-2 justify-end">
+                פריט דחוף לטיפול
+                {urgentItem?.status === 'late' ? (
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                ) : urgentItem ? (
+                    <Clock className="h-5 w-5 text-yellow-500" />
+                ) : null}
+                </CardTitle>
+                <CardDescription>
+                {urgentItem?.status === 'late'
+                    ? 'ההתחייבות הבאה עברה את מועד הפירעון.'
+                    : urgentItem ? 'התשלום הבא שלך מתקרב.' : 'כל ההתחייבויות שלך מסודרות.'}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {urgentItem ? (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                    <span className="font-medium">{urgentItem.creditor.name}</span>
+                    <Badge variant={urgentItem.type === 'loan' ? 'default' : 'secondary'}>
+                        {urgentItem.type === 'loan' ? 'הלוואה' : 'חוב'}
+                    </Badge>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                    <span className="text-muted-foreground">סכום:</span>
+                    <span className="font-bold text-lg">
+                        ₪{(urgentItem.nextPaymentAmount || urgentItem.amount).toLocaleString('he-IL')}
+                    </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">תאריך יעד:</span>
+                    <DaysToDueBadge dueDate={urgentItem.dueDate} status={urgentItem.status} />
+                    </div>
+                    <Button asChild className="w-full">
+                    <Link href={urgentItem.type === 'loan' ? '/loans' : '/debts'}>
+                        צפה בפרטים
+                    </Link>
+                    </Button>
                 </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-muted-foreground">סכום:</span>
-                  <span className="font-bold text-lg">
-                    ₪{(urgentItem.nextPaymentAmount || urgentItem.amount).toLocaleString('he-IL')}
-                  </span>
+                ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-10 w-10 text-green-500 mb-2" />
+                    <p>אין פריטים דחופים. כל הכבוד!</p>
+                    <p className="text-xs mt-2">כל ההתחייבויות משולמות בזמן.</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">תאריך יעד:</span>
-                  <DaysToDueBadge dueDate={urgentItem.dueDate} status={urgentItem.status} />
-                </div>
-                <Button asChild className="w-full">
-                  <Link href={urgentItem.type === 'loan' ? '/loans' : '/debts'}>
-                    צפה בפרטים
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="h-[250px] flex flex-col items-center justify-center text-center text-sm text-muted-foreground">
-                <CheckCircle2 className="h-10 w-10 text-green-500 mb-2" />
-                <p>אין פריטים דחופים. כל הכבוד!</p>
-                <p className="text-xs mt-2">כל ההתחייבויות משולמות בזמן.</p>
-              </div>
-            )}
-          </CardContent>
+                )}
+            </CardContent>
         </Card>
       </div>
+
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90svh] overflow-y-auto">
+        <DialogContent dir="rtl" className="sm:max-w-[425px] max-h-[90svh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">{`הוספת ${entityName} חדש`}</DialogTitle>
             <DialogDescription>{`מלא את הפרטים כדי להוסיף ${entityName} חדש למערכת.`}</DialogDescription>

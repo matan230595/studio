@@ -5,14 +5,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Globe, Mail, Bell, Upload, Trash2 } from 'lucide-react';
+import { Globe, Mail, Bell, Upload, Trash2, Sun, Moon, Laptop } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AppLogo } from '@/components/app-logo';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 
 const LOGO_STORAGE_KEY = 'app-logo';
 
 export default function SettingsPage() {
     const { toast } = useToast();
+    const { theme, setTheme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [currentLogo, setCurrentLogo] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
@@ -77,10 +80,10 @@ export default function SettingsPage() {
 
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
+    <div dir="rtl" className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
       <header>
         <div className="flex items-center gap-3">
-          <AppLogo className="h-10 w-10 text-primary" />
+          <AppLogo className="h-12 w-12 text-primary" />
           <h1 className="font-headline text-3xl font-bold tracking-tight">
             הגדרות
           </h1>
@@ -131,6 +134,30 @@ export default function SettingsPage() {
                 </div>
             </CardContent>
         </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>ערכת נושא</CardTitle>
+          <CardDescription>בחר את ערכת הנושא של המערכת.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'light' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('light')}>
+                    <Sun />
+                    בהיר
+                </Button>
+                <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'dark' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('dark')}>
+                    <Moon />
+                    כהה
+                </Button>
+                <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'system' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('system')}>
+                    <Laptop />
+                    מערכת
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>התראות</CardTitle>
