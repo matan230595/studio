@@ -289,14 +289,14 @@ export default function Dashboard() {
                     </Badge>
                     </div>
                     <div className="flex justify-between items-baseline">
-                    <span className="text-muted-foreground">סכום:</span>
-                    <span className="font-bold text-lg">
-                        ₪{(urgentItem.nextPaymentAmount || urgentItem.amount).toLocaleString('he-IL')}
-                    </span>
+                        <span className="text-muted-foreground">סכום:</span>
+                        <span className="font-bold text-lg">
+                            ₪{(urgentItem.nextPaymentAmount || urgentItem.amount).toLocaleString('he-IL')}
+                        </span>
                     </div>
                     <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">תאריך יעד:</span>
-                    <DaysToDueBadge dueDate={urgentItem.dueDate} status={urgentItem.status} />
+                        <span className="text-muted-foreground">תאריך יעד:</span>
+                        <DaysToDueBadge dueDate={urgentItem.dueDate} status={urgentItem.status} />
                     </div>
                     <Button asChild className="w-full">
                     <Link href={urgentItem.type === 'loan' ? '/loans' : '/debts'}>
