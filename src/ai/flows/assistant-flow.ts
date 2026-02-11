@@ -32,9 +32,14 @@ const FinancialSummarySchema = z.object({
   activeItems: z.number(),
 }).describe("A summary of the user's key financial metrics.");
 
+const ChatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+});
 
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user\'s question about their financial situation.'),
+  history: z.array(ChatMessageSchema).optional().describe('The preceding conversation history.'),
   summary: FinancialSummarySchema,
   lateTransactions: z.array(TransactionSchema).describe("A list of transactions that are past their due date."),
   upcomingPayments: z.array(TransactionSchema).describe("A list of the next 5 upcoming payments."),
@@ -59,7 +64,16 @@ const prompt = ai.definePrompt({
 
 תמיד תענה בעברית. השתמש בטון מקצועי, מעודד וברור.
 
-**ניתוח הנתונים:**
+{{#if history}}
+**היסטוריית שיחה קודמת:**
+{{#each history}}
+- **{{role}}**: {{content}}
+{{/each}}
+
+---
+{{/if}}
+
+**ניתוח הנתונים (נכון לעכשיו):**
 
 1.  **התחל מהתמונה הגדולה:** השתמש בסיכום הפיננסי כדי להבין את המצב הכללי.
     *   **סיכום:** \`\`\`json
@@ -85,7 +99,7 @@ const prompt = ai.definePrompt({
 
 **מענה לשאלת המשתמש:**
 
-לאחר ניתוח הנתונים, ענה על שאלת המשתמש הספציפית: \`"{{{query}}}"\`
+בהתבסס על ההיסטוריה ועל הנתונים העדכניים, ענה על שאלת המשתמש הספציפית: \`"{{{query}}}"\`
 
 שלב את התובנות וההצעות שלך בתשובה, גם אם המשתמש לא שאל עליהן ישירות. המטרה היא לתת ערך מוסף בכל אינטראקציה.
 

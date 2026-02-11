@@ -161,6 +161,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+            <SidebarTrigger className="hidden md:flex" />
             <SidebarTrigger className="md:hidden">
               <Menu />
             </SidebarTrigger>

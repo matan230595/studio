@@ -25,7 +25,7 @@ export default function AssistantPage() {
     {
       id: 'init1',
       role: 'assistant',
-      content: 'שלום! אני עוזר ה-AI של DebtWise. איך אני יכול לעזור לך היום עם ניהול ההתחייבויות שלך?',
+      content: 'שלום! אני עוזר ה-AI של DebtWise. אני זוכר את השיחה שלנו. איך אני יכול לעזור לך היום?',
     },
   ]);
   const [input, setInput] = useState('');
@@ -56,7 +56,8 @@ export default function AssistantPage() {
     if (!input.trim() || isLoading || isLoadingTransactions) return;
 
     const userMessage: Message = { role: 'user', content: input, id: `user-${Date.now()}` };
-    setMessages((prev) => [...prev, userMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInput('');
     setIsLoading(true);
     setAudioSource('');
@@ -73,7 +74,8 @@ export default function AssistantPage() {
       const upcomingPayments = getUpcomingPayments(transactions);
 
       const response = await askAssistant({ 
-        query: input, 
+        query: input,
+        history: messages, // Pass messages *before* adding the new user message
         transactions,
         summary,
         lateTransactions,
