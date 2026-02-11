@@ -187,7 +187,7 @@ export default function ReportsPage() {
                 <ChartContainer config={{
                   total: {
                     label: "סך התחייבות",
-                    color: "#3b82f6",
+                    color: "hsl(var(--primary))",
                   },
                 }} className="h-[400px] w-full">
                 <BarChart data={barChartData} layout="vertical" margin={{ right: 20, left: 10, top: 10, bottom: 10 }}>
