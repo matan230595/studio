@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select"
 import { TransactionForm } from '@/components/transaction-form';
 import type { Transaction } from '@/lib/data';
+import { PAYMENT_METHODS } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { exportToCsv } from '@/lib/utils';
@@ -70,6 +71,50 @@ type SortConfig = {
   key: keyof Transaction | 'creditor.name' | null;
   direction: 'ascending' | 'descending';
 }
+
+const csvRowSchema = z.object({
+  creditorName: z.string().min(2),
+  amount: z.coerce.number().positive(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+
+  // Optional strings
+  description: z.string().optional().nullable(),
+  accountNumber: z.string().optional().nullable(),
+  paymentUrl: z.string().url().optional().nullable(),
+  collateral: z.string().optional().nullable(),
+  tags: z.string().optional().nullable(),
+  creditorPhone: z.string().optional().nullable(),
+  creditorEmail: z.string().email().optional().nullable(),
+  
+  // Stricter type for paymentMethod
+  paymentMethod: z.enum(PAYMENT_METHODS).optional().nullable(),
+
+  // Optional numbers
+  originalAmount: z.coerce.number().positive().optional().nullable(),
+  interestRate: z.coerce.number().optional().nullable(),
+  nextPaymentAmount: z.coerce.number().positive().optional().nullable(),
+  lateFee: z.coerce.number().optional().nullable(),
+
+  // Optional enums (as per src/lib/data.ts)
+  interestType: z.enum(["קבועה","משתנה"]).optional().nullable(),
+  paymentFrequency: z.enum(["יומי","שבועי","דו-שבועי","חודשי","רבעוני","שנתי"]).optional().nullable(),
+  priority: z.enum(["נמוכה","בינונית","גבוהה"]).optional().nullable(),
+  category: z.enum(["דיור","רכב","לימודים","עסק","אישי","אחר"]).optional().nullable(),
+
+  // Defaults
+  status: z.enum(["active","paid","late"]).default("active"),
+  paymentType: z.enum(["single","installments"]).default("single"),
+
+  // Correct boolean handling
+  isAutoPay: z.preprocess(
+    (v) => String(v).toLowerCase() === "true",
+    z.boolean()
+  ).default(false),
+
+  // Date
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+}).passthrough();
+
 
 export function TransactionPageView({ pageTitle, pageDescription, transactionType, entityName, entityNamePlural }: TransactionPageViewProps) {
   const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('table');
@@ -218,50 +263,6 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     const file = event.target.files?.[0];
     if (!file || !user || !firestore) return;
 
-    // Zod schema for a row in the CSV file.
-    const csvRowSchema = z.object({
-      creditorName: z.string().min(2),
-      amount: z.coerce.number().positive(),
-      dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    
-      // Optional strings
-      description: z.string().optional().nullable(),
-      accountNumber: z.string().optional().nullable(),
-      paymentUrl: z.string().url().optional().nullable(),
-      collateral: z.string().optional().nullable(),
-      tags: z.string().optional().nullable(),
-      paymentMethod: z.string().optional().nullable(),
-      creditorPhone: z.string().optional().nullable(),
-      creditorEmail: z.string().email().optional().nullable(),
-
-    
-      // Optional numbers
-      originalAmount: z.coerce.number().positive().optional().nullable(),
-      interestRate: z.coerce.number().optional().nullable(),
-      nextPaymentAmount: z.coerce.number().positive().optional().nullable(),
-      lateFee: z.coerce.number().optional().nullable(),
-    
-      // Optional enums (as per src/lib/data.ts)
-      interestType: z.enum(["קבועה","משתנה"]).optional().nullable(),
-      paymentFrequency: z.enum(["יומי","שבועי","דו-שבועי","חודשי","רבעוני","שנתי"]).optional().nullable(),
-      priority: z.enum(["נמוכה","בינונית","גבוהה"]).optional().nullable(),
-      category: z.enum(["דיור","רכב","לימודים","עסק","אישי","אחר"]).optional().nullable(),
-    
-      // Defaults
-      status: z.enum(["active","paid","late"]).default("active"),
-      paymentType: z.enum(["single","installments"]).default("single"),
-    
-      // Correct boolean handling
-      isAutoPay: z.preprocess(
-        (v) => String(v).toLowerCase() === "true",
-        z.boolean()
-      ).default(false),
-    
-      // Date
-      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-    }).passthrough();
-
-
     Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -276,7 +277,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
                 if (validation.success) {
                     const validatedData = validation.data;
-                    const newTransaction = {
+                    const newTransaction: Omit<Transaction, 'id'> = {
                       creditor: { 
                           name: validatedData.creditorName,
                           phone: validatedData.creditorPhone ?? null,

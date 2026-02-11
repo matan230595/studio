@@ -2,10 +2,9 @@
 'use client';
 
 import type { Transaction } from './data';
+import { PAYMENT_METHODS } from './data';
 import { format, parse } from 'date-fns';
 
-// Define a strict list of allowed payment methods and a corresponding type.
-export const PAYMENT_METHODS = ["העברה בנקאית", "כרטיס אשראי", "מזומן", "אחר"] as const;
 export type PaymentMethod = typeof PAYMENT_METHODS[number];
 
 /**

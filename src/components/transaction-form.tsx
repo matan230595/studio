@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { PlusCircle } from "lucide-react"
+import { CalendarIcon, PlusCircle } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -33,11 +33,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+
 
 import { format, parse, addMonths } from "date-fns"
-import { Transaction } from "@/lib/data"
+import { Transaction, PAYMENT_METHODS } from "@/lib/data"
 import { mapTransactionToFormDefaults } from "@/lib/transactionFormMapper"
-import { PAYMENT_METHODS } from "@/lib/transactionFormMapper"
 
 const optionalDateString = z.string().optional().or(z.literal(""));
 const requiredDateString = z.string().min(1, { message: "יש להזין תאריך יעד." });
@@ -356,33 +359,74 @@ export function TransactionForm({
                 </div>
 
                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField
-                        control={form.control}
-                        name="startDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>תאריך התחלה</FormLabel>
-                            <FormControl>
-                                <Input placeholder="DD/MM/YYYY" {...field} value={field.value ?? ""} />
-                            </FormControl>
-                            <FormDescription className="text-xs">פורמט: DD/MM/YYYY</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                   <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>תאריך התחלה</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full text-right font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value || <span>בחר תאריך</span>}
+                                  <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ? parse(field.value, 'dd/MM/yyyy', new Date()) : undefined}
+                                onSelect={(date) => field.onChange(date ? format(date, 'dd/MM/yyyy') : '')}
+                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                     <FormField
-                        control={form.control}
-                        name="dueDate"
-                        render={({ field }) => (
-                           <FormItem>
-                            <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
-                            <FormControl>
-                                <Input placeholder="DD/MM/YYYY" {...field} value={field.value ?? ""} />
-                            </FormControl>
-                            <FormDescription className="text-xs">פורמט: DD/MM/YYYY</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                           <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
+                           <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full text-right font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value || <span>בחר תאריך</span>}
+                                  <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ? parse(field.value, 'dd/MM/yyyy', new Date()) : undefined}
+                                onSelect={(date) => field.onChange(date ? format(date, 'dd/MM/yyyy') : '')}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                 </div>
             </AccordionContent>

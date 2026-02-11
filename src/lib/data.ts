@@ -1,3 +1,5 @@
+export const PAYMENT_METHODS = ['העברה בנקאית', 'כרטיס אשראי', 'מזומן', 'אחר'] as const;
+
 export type Transaction = {
   id: string;
   type: 'debt' | 'loan';
@@ -26,7 +28,7 @@ export type Transaction = {
   paymentType: 'single' | 'installments';
   numberOfPayments?: number | null;
   nextPaymentAmount?: number | null;
-  paymentMethod?: string | null;
+  paymentMethod?: typeof PAYMENT_METHODS[number] | null;
   userId?: string;
 };
 
