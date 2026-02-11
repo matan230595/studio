@@ -156,12 +156,10 @@ export function TransactionForm({
         amount: transaction.amount,
         startDate: fromIsoDate(transaction.startDate),
         dueDate: fromIsoDate(transaction.dueDate),
-
         creditorPhone: transaction.creditor.phone ?? undefined,
         creditorEmail: transaction.creditor.email ?? undefined,
         accountNumber: transaction.accountNumber ?? undefined,
         paymentUrl: transaction.paymentUrl ?? undefined,
-
         originalAmount: transaction.originalAmount ?? undefined,
         category: transaction.category ?? undefined,
         interestRate: transaction.interestRate ?? undefined,
@@ -170,7 +168,6 @@ export function TransactionForm({
         collateral: transaction.collateral ?? undefined,
         priority: transaction.priority ?? undefined,
         tags: transaction.tags ?? undefined,
-
         paymentType: transaction.paymentType,
         numberOfPayments: transaction.numberOfPayments ?? undefined,
         nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
@@ -188,7 +185,6 @@ export function TransactionForm({
         startDate: format(new Date(), "dd/MM/yyyy"),
         dueDate: format(defaultDueDate, "dd/MM/yyyy"),
         isAutoPay: false,
-        // Reset all other fields to empty/undefined
         creditorName: "",
         amount: undefined,
         description: "",
