@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from "react"
@@ -649,10 +650,10 @@ export function TransactionForm({
                             <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
                                 <FormControl><SelectTrigger><SelectValue placeholder="בחר אמצעי תשלום" /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    <SelectItem value="Bank Transfer">העברה בנקאית</SelectItem>
-                                    <SelectItem value="Credit Card">כרטיס אשראי</SelectItem>
-                                    <SelectItem value="Cash">מזומן</SelectItem>
-                                    <SelectItem value="Other">אחר</SelectItem>
+                                    <SelectItem value="העברה בנקאית">העברה בנקאית</SelectItem>
+                                    <SelectItem value="כרטיס אשראי">כרטיס אשראי</SelectItem>
+                                    <SelectItem value="מזומן">מזומן</SelectItem>
+                                    <SelectItem value="אחר">אחר</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />
