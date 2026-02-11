@@ -25,6 +25,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
 import type { Transaction } from '@/lib/data';
