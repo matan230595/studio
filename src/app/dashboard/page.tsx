@@ -139,7 +139,7 @@ export default function Dashboard() {
   }
 
   return (
-    <main dir="rtl" className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <div className="flex items-center justify-between">
         <header className="text-right">
           <div className="flex items-center gap-3">
@@ -316,7 +316,7 @@ export default function Dashboard() {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent dir="rtl" className="sm:max-w-[425px] max-h-[90svh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px] max-h-[90svh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">{`הוספת ${entityName} חדש`}</DialogTitle>
             <DialogDescription>{`מלא את הפרטים כדי להוסיף ${entityName} חדש למערכת.`}</DialogDescription>

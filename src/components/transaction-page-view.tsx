@@ -49,6 +49,7 @@ import { DaysToDueBadge } from './days-to-due-badge';
 import { AppLogo } from './app-logo';
 import { Input } from './ui/input';
 import Papa from 'papaparse';
+import { Label } from './ui/label';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -442,7 +443,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
   
   return (
-    <main dir="rtl" className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <header className="flex items-start justify-between sm:items-center flex-col sm:flex-row gap-4 text-right">
         <div>
           <div className="flex items-center gap-3">
@@ -481,7 +482,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
               ייבוא
             </Button>
             <Input type="file" ref={importFileInputRef} className="hidden" accept=".csv" onChange={handleFileImport} />
-             <Button variant="outline" size="sm" onClick={handleExport}>
+             <Button variant="outline" size="sm" onClick={handleExport} disabled={processedTransactions.length === 0}>
               <FileDown className="ms-2 h-4 w-4" />
               ייצוא
             </Button>
@@ -540,7 +541,7 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
       />
 
       <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent>
           <AlertDialogHeader className="text-right">
             <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
             <AlertDialogDescription>
