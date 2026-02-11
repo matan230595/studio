@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { PlusCircle, CalendarIcon } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -25,8 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { Switch } from "@/components/ui/switch"
 import {
   Accordion,
@@ -39,7 +38,6 @@ import { format, parse, addMonths } from "date-fns"
 import { Transaction } from "@/lib/data"
 import { mapTransactionToFormDefaults } from "@/lib/transactionFormMapper"
 import { PAYMENT_METHODS } from "@/lib/transactionFormMapper"
-import { cn } from "@/lib/utils"
 
 const optionalDateString = z.string().optional().or(z.literal(""));
 const requiredDateString = z.string().min(1, { message: "יש להזין תאריך יעד." });
@@ -116,9 +114,6 @@ export function TransactionForm({
         isAutoPay: false
     }
   })
-
-  const [isStartDatePickerOpen, setStartDatePickerOpen] = useState(false);
-  const [isDueDatePickerOpen, setDueDatePickerOpen] = useState(false);
 
   const type = form.watch("type")
   const paymentType = form.watch("paymentType")
@@ -365,37 +360,12 @@ export function TransactionForm({
                         control={form.control}
                         name="startDate"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
+                          <FormItem>
                             <FormLabel>תאריך התחלה</FormLabel>
-                            <Popover open={isStartDatePickerOpen} onOpenChange={setStartDatePickerOpen}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full justify-between text-right font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <span>{field.value || "בחר תאריך"}</span>
-                                    <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value ? parse(field.value, "dd/MM/yyyy", new Date()) : undefined}
-                                  onSelect={(date) => {
-                                    if(date) {
-                                      field.onChange(format(date, "dd/MM/yyyy"));
-                                    }
-                                    setStartDatePickerOpen(false);
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <FormControl>
+                                <Input placeholder="DD/MM/YYYY" {...field} value={field.value ?? ""} />
+                            </FormControl>
+                            <FormDescription className="text-xs">פורמט: DD/MM/YYYY</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -404,37 +374,12 @@ export function TransactionForm({
                         control={form.control}
                         name="dueDate"
                         render={({ field }) => (
-                           <FormItem className="flex flex-col">
+                           <FormItem>
                             <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
-                             <Popover open={isDueDatePickerOpen} onOpenChange={setDueDatePickerOpen}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full justify-between text-right font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <span>{field.value || "בחר תאריך"}</span>
-                                    <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value ? parse(field.value, "dd/MM/yyyy", new Date()) : undefined}
-                                  onSelect={(date) => {
-                                    if(date) {
-                                      field.onChange(format(date, "dd/MM/yyyy"));
-                                    }
-                                    setDueDatePickerOpen(false);
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <FormControl>
+                                <Input placeholder="DD/MM/YYYY" {...field} value={field.value ?? ""} />
+                            </FormControl>
+                            <FormDescription className="text-xs">פורמט: DD/MM/YYYY</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
