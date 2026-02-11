@@ -375,21 +375,21 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
             <TableRow>
               <TableHead className="text-right">
                 <Button variant="ghost" onClick={() => requestSort('creditor.name')} className="px-2">
-                    {renderSortIcon('creditor.name')}
                     {transactionType === 'loan' ? 'מלווה' : 'נושה'}
+                    {renderSortIcon('creditor.name')}
                 </Button>
               </TableHead>
               <TableHead className="hidden sm:table-cell text-right">
                  <Button variant="ghost" onClick={() => requestSort('amount')} className="px-2">
-                    {renderSortIcon('amount')}
                     סכום
+                    {renderSortIcon('amount')}
                 </Button>
               </TableHead>
               {transactionType === 'loan' && <TableHead className="hidden md:table-cell text-right">החזר חודשי</TableHead>}
               <TableHead className="hidden md:table-cell text-right">
                 <Button variant="ghost" onClick={() => requestSort('dueDate')} className="px-2">
-                    {renderSortIcon('dueDate')}
                     תאריך יעד
+                    {renderSortIcon('dueDate')}
                 </Button>
               </TableHead>
               <TableHead className="text-right">סטטוס</TableHead>
