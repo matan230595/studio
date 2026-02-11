@@ -167,7 +167,7 @@ function Calendar({
               </Select>
             )
           }
-          return null
+          return <></>;
         },
       }}
       {...props}
