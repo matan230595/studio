@@ -13,6 +13,11 @@ service cloud.firestore {
       match /transactions/{transactionId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Secure the budgets subcollection
+      match /budgets/{budgetId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }
