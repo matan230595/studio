@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { PlusCircle, ChevronDown } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -64,21 +64,21 @@ const formSchema = z
 
     // Terms & Classification
     originalAmount: optionalNumber,
-    category: z.string().optional(),
+    category: z.enum(["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"]).optional(),
     interestRate: optionalNumber,
-    interestType: z.string().optional(),
+    interestType: z.enum(['קבועה', 'משתנה']).optional(),
     lateFee: optionalNumber,
     collateral: z.string().optional(),
-    priority: z.string().optional(),
+    priority: z.enum(['נמוכה', 'בינונית', 'גבוהה']).optional(),
     tags: z.string().optional(),
 
     // Payment Settings
     paymentType: z.enum(["single", "installments"]),
     numberOfPayments: optionalNumber,
     nextPaymentAmount: optionalNumber,
-    paymentMethod: z.string().optional(),
+    paymentMethod: z.enum(["העברה בנקאית", "כרטיס אשראי", "מזומן", "אחר"]).optional(),
     isAutoPay: z.boolean().default(false),
-    paymentFrequency: z.string().optional(),
+    paymentFrequency: z.enum(['יומי', 'שבועי', 'דו-שבועי', 'חודשי', 'רבעוני', 'שנתי']).optional(),
   })
   .refine(
     data => {
@@ -136,8 +136,12 @@ export function TransactionForm({
   const fromIsoDate = (isoDate: string | undefined | null): string => {
       if (!isoDate) return "";
       try {
-        const date = parse(isoDate, 'yyyy-MM-dd', new Date());
-        return format(date, 'dd/MM/yyyy');
+        // Handle both yyyy-MM-dd and dd/MM/yyyy inputs gracefully
+        if (isoDate.includes('-')) {
+            const date = parse(isoDate, 'yyyy-MM-dd', new Date());
+            return format(date, 'dd/MM/yyyy');
+        }
+        return isoDate; // Already in dd/MM/yyyy format
       } catch {
         return isoDate;
       }
@@ -145,23 +149,38 @@ export function TransactionForm({
 
   React.useEffect(() => {
     if (transaction) {
+      // Explicitly map all fields, converting null to undefined to match the form schema.
+      // This is the definitive fix for the build error.
       form.reset({
-        ...transaction,
+        type: transaction.type,
+        amount: transaction.amount,
+        isAutoPay: transaction.isAutoPay,
+        paymentType: transaction.paymentType,
+        
+        // Mapped fields
         creditorName: transaction.creditor.name,
-        creditorPhone: transaction.creditor.phone ?? undefined,
-        creditorEmail: transaction.creditor.email ?? undefined,
         startDate: fromIsoDate(transaction.startDate),
         dueDate: fromIsoDate(transaction.dueDate),
-        numberOfPayments: transaction.numberOfPayments ?? undefined,
+
+        // Optional fields: null -> undefined
+        creditorPhone: transaction.creditor.phone ?? undefined,
+        creditorEmail: transaction.creditor.email ?? undefined,
+        description: transaction.description ?? undefined,
         originalAmount: transaction.originalAmount ?? undefined,
+        category: transaction.category ?? undefined,
         interestRate: transaction.interestRate ?? undefined,
+        interestType: transaction.interestType ?? undefined,
         lateFee: transaction.lateFee ?? undefined,
-        nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
+        collateral: transaction.collateral ?? undefined,
+        priority: transaction.priority ?? undefined,
         tags: transaction.tags ?? undefined,
+        numberOfPayments: transaction.numberOfPayments ?? undefined,
+        nextPaymentAmount: transaction.nextPaymentAmount ?? undefined,
+        paymentMethod: transaction.paymentMethod ?? undefined,
         accountNumber: transaction.accountNumber ?? undefined,
         paymentUrl: transaction.paymentUrl ?? undefined,
-        collateral: transaction.collateral ?? undefined
-      })
+        paymentFrequency: transaction.paymentFrequency ?? undefined,
+      });
     } else {
       const defaultDueDate = new Date()
       defaultDueDate.setMonth(defaultDueDate.getMonth() + 1)
@@ -174,15 +193,14 @@ export function TransactionForm({
         isAutoPay: false,
         // Reset all other fields to empty/undefined
         creditorName: "",
-        creditorPhone: "",
-        creditorEmail: "",
-        description: "",
         amount: undefined,
+        description: "",
         originalAmount: undefined,
         interestRate: undefined,
         nextPaymentAmount: undefined,
         numberOfPayments: undefined,
-        paymentMethod: undefined,
+        creditorPhone: "",
+        creditorEmail: "",
         accountNumber: "",
         paymentUrl: "",
         category: undefined,
@@ -192,6 +210,7 @@ export function TransactionForm({
         paymentFrequency: "חודשי",
         priority: "בינונית",
         tags: "",
+        paymentMethod: undefined,
       })
     }
   }, [transaction, fixedType, form])
@@ -297,7 +316,7 @@ export function TransactionForm({
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
           <AccordionItem value="item-1">
             <AccordionTrigger>פרטים בסיסיים</AccordionTrigger>
-            <AccordionContent className="space-y-4">
+            <AccordionContent className="space-y-4 pt-4">
                 <FormField
                   control={form.control}
                   name="creditorName"
@@ -333,6 +352,7 @@ export function TransactionForm({
                           placeholder="פרטים נוספים על ההתחייבות..."
                           {...field}
                            value={field.value ?? ""}
+                           className="text-sm"
                         />
                       </FormControl>
                       <FormMessage />
@@ -355,6 +375,7 @@ export function TransactionForm({
                             placeholder="5,000"
                             {...field}
                              value={field.value ?? ""}
+                             className="text-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -373,6 +394,7 @@ export function TransactionForm({
                             placeholder="5,000"
                             {...field}
                              value={field.value ?? ""}
+                             className="text-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -393,6 +415,7 @@ export function TransactionForm({
                                 placeholder="DD/MM/YYYY"
                                 {...field}
                                 value={field.value ?? ""}
+                                className="text-sm"
                             />
                             </FormControl>
                             <FormMessage />
@@ -410,6 +433,7 @@ export function TransactionForm({
                                 placeholder="DD/MM/YYYY"
                                 {...field}
                                 value={field.value ?? ""}
+                                className="text-sm"
                             />
                             </FormControl>
                             <FormMessage />
@@ -422,14 +446,14 @@ export function TransactionForm({
           
           <AccordionItem value="item-2">
             <AccordionTrigger>פרטי נושה (מורחב)</AccordionTrigger>
-            <AccordionContent className="space-y-4">
+            <AccordionContent className="space-y-4 pt-4">
                  <FormField
                   control={form.control}
                   name="accountNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>מספר חשבון / אסמכתא</FormLabel>
-                      <FormControl><Input placeholder="123-456789" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormControl><Input placeholder="123-456789" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -441,7 +465,7 @@ export function TransactionForm({
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>טלפון ליצירת קשר</FormLabel>
-                        <FormControl><Input type="tel" placeholder="050-1234567" {...field} value={field.value ?? ""} /></FormControl>
+                        <FormControl><Input type="tel" placeholder="050-1234567" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -452,7 +476,7 @@ export function TransactionForm({
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>אימייל ליצירת קשר</FormLabel>
-                        <FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value ?? ""} /></FormControl>
+                        <FormControl><Input type="email" placeholder="contact@example.com" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -464,7 +488,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>קישור לתשלום</FormLabel>
-                      <FormControl><Input type="url" placeholder="https://example.com/pay" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormControl><Input type="url" placeholder="https://example.com/pay" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -474,7 +498,7 @@ export function TransactionForm({
 
            <AccordionItem value="item-3">
             <AccordionTrigger>תנאים וסיווג</AccordionTrigger>
-            <AccordionContent className="space-y-4">
+            <AccordionContent className="space-y-4 pt-4">
                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                      <FormField
                         control={form.control}
@@ -483,7 +507,7 @@ export function TransactionForm({
                             <FormItem>
                             <FormLabel>ריבית שנתית (%)</FormLabel>
                             <FormControl>
-                                <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} />
+                                <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} className="text-sm" />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -495,7 +519,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>סוג ריבית</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                 <FormControl><SelectTrigger><SelectValue placeholder="בחר סוג" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="קבועה">קבועה</SelectItem>
@@ -513,7 +537,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>עמלת פיגורים (₪)</FormLabel>
-                      <FormControl><Input type="number" placeholder="50" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormControl><Input type="number" placeholder="50" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -524,7 +548,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>בטחונות</FormLabel>
-                      <FormControl><Input placeholder="לדוגמה: רכב, דירה" {...field} value={field.value ?? ""} /></FormControl>
+                      <FormControl><Input placeholder="לדוגמה: רכב, דירה" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -536,7 +560,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>קטגוריה</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                 <FormControl><SelectTrigger><SelectValue placeholder="בחר קטגוריה" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="דיור">דיור</SelectItem>
@@ -557,7 +581,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>עדיפות</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                 <FormControl><SelectTrigger><SelectValue placeholder="בחר עדיפות" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="נמוכה">נמוכה</SelectItem>
@@ -576,7 +600,7 @@ export function TransactionForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>תגיות (מופרדות בפסיק)</FormLabel>
-                      <FormControl><Input placeholder="חשבונות, אישי, לטיפול..." {...field} value={field.value ?? ""} /></FormControl>
+                      <FormControl><Input placeholder="חשבונות, אישי, לטיפול..." {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -586,7 +610,7 @@ export function TransactionForm({
 
           <AccordionItem value="item-4">
             <AccordionTrigger>הגדרות תשלום</AccordionTrigger>
-            <AccordionContent className="space-y-4">
+            <AccordionContent className="space-y-4 pt-4">
                 <FormField
                     control={form.control}
                     name="paymentType"
@@ -622,7 +646,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>החזר חודשי (₪)</FormLabel>
-                            <FormControl><Input type="number" placeholder="500" {...field} value={field.value ?? ""} /></FormControl>
+                            <FormControl><Input type="number" placeholder="500" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -633,7 +657,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>מספר תשלומים</FormLabel>
-                            <FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ""} /></FormControl>
+                            <FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ""} className="text-sm" /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -647,7 +671,7 @@ export function TransactionForm({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>אמצעי תשלום</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                 <FormControl><SelectTrigger><SelectValue placeholder="בחר אמצעי תשלום" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="העברה בנקאית">העברה בנקאית</SelectItem>
@@ -666,7 +690,7 @@ export function TransactionForm({
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>תדירות תשלום</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                     <FormControl><SelectTrigger><SelectValue placeholder="בחר תדירות" /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="יומי">יומי</SelectItem>
