@@ -172,7 +172,7 @@ export default function NotificationsPage() {
                 return (
                     <div key={transaction.id} className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-accent">
                         <div className={cn("mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-accent", color)}>
-                           {React.cloneElement(icon, { className: "h-5 w-5" })}
+                           {icon}
                         </div>
                         <div className="flex-grow">
                             <p className="font-medium">
