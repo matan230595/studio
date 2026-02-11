@@ -73,7 +73,7 @@ export default function NotificationsPage() {
   
   if (isLoading) {
       return (
-          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
               <header>
                   <Skeleton className="h-9 w-40" />
                   <Skeleton className="h-5 w-80 mt-2" />
@@ -104,7 +104,7 @@ export default function NotificationsPage() {
   }
   
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 animate-in fade-in-50">
       <header>
         <div className="flex items-center gap-3">
           <AppLogo className="h-10 w-10 text-primary" />

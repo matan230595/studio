@@ -12,7 +12,7 @@ export default function ProfilePage() {
 
   if (isUserLoading || !user) {
     return (
-       <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+       <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
             <header>
                 <Skeleton className="h-9 w-48" />
                 <Skeleton className="h-5 w-72 mt-2" />
@@ -43,7 +43,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
       <header>
         <div className="flex items-center gap-3">
           <AppLogo className="h-10 w-10 text-primary" />

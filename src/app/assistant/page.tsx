@@ -108,7 +108,7 @@ export default function AssistantPage() {
   };
   
   return (
-    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 h-full max-h-[calc(100vh-2rem)]">
+    <div className="flex flex-col gap-4 p-4 md:gap-8 md:p-8 h-full max-h-[calc(100vh-2rem)] animate-in fade-in-50">
       <header>
         <div className="flex items-center gap-3">
           <AppLogo className="h-10 w-10 text-primary" />
