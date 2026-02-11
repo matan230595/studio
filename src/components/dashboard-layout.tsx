@@ -79,8 +79,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/">
-                <SidebarMenuButton isActive={pathname === '/'} tooltip={{children: 'לוח מחוונים', side: 'left'}}>
+              <Link href="/dashboard">
+                <SidebarMenuButton isActive={pathname === '/dashboard'} tooltip={{children: 'לוח מחוונים', side: 'left'}}>
                   <Home />
                   <span>לוח מחוונים</span>
                 </SidebarMenuButton>
