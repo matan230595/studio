@@ -47,7 +47,7 @@
         "paymentType": { "type": "string", "enum": ["single", "installments"] },
         "numberOfPayments": { "type": ["number", "null"], "description": "The total number of installments for the loan." },
         "nextPaymentAmount": { "type": ["number", "null"] },
-        "paymentMethod": { "type": ["string", "null"], "description": "The method used for payments.", "enum": ["Bank Transfer", "Credit Card", "Cash", "Other"] },
+        "paymentMethod": { "type": ["string", "null"], "description": "The method used for payments.", "enum": ["העברה בנקאית", "כרטיס אשראי", "מזומן", "אחר"] },
         "description": { "type": ["string", "null"], "description": "Notes or details about the transaction." }
       },
       "required": ["userId", "type", "creditor", "amount", "status", "dueDate", "paymentType", "isAutoPay"]

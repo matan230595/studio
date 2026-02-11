@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DashboardLayout } from './dashboard-layout';
 import { Skeleton } from './ui/skeleton';
+import { VerifyEmailView } from './verify-email-view';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -48,9 +49,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   
   const isLoginPage = pathname === '/login';
 
-  // If there's a user and we're not on the login page, show the protected content.
-  if (user && !isLoginPage) {
+  // If user is logged in and verified
+  if (user && user.emailVerified && !isLoginPage) {
     return <DashboardLayout>{children}</DashboardLayout>;
+  }
+
+  // If user is logged in but NOT verified
+  if (user && !user.emailVerified && !isLoginPage) {
+      return <VerifyEmailView />;
   }
 
   // If there's no user and we are on the login page, show the login form.
@@ -58,7 +64,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // For any other intermediate state (e.g., a logged-in user on /login waiting for redirect),
-  // render nothing to avoid content flashes. The useEffect will handle the redirect.
+  // For any other intermediate state, render nothing to avoid content flashes.
   return null;
 }

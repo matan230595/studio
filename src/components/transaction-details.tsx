@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -62,7 +63,7 @@ export function TransactionDetails({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md" side="left">
+      <SheetContent className="w-full sm:max-w-md" side="right">
         <ScrollArea className="h-full pr-6 -mr-6">
             <SheetHeader className="text-right mb-6">
             <SheetTitle className="font-headline text-2xl">פרטי {entityName}</SheetTitle>

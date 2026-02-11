@@ -50,6 +50,7 @@ import { AppLogo } from './app-logo';
 import { Input } from './ui/input';
 import Papa from 'papaparse';
 import { Label } from './ui/label';
+import * as z from 'zod';
 
 const statusMap: { [key: string]: { text: string; variant: 'default' | 'secondary' | 'destructive' } } = {
   active: { text: 'פעיל', variant: 'default' },
@@ -217,41 +218,95 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     const file = event.target.files?.[0];
     if (!file || !user || !firestore) return;
 
+    // Zod schema for a row in the CSV file. Looser than the main schema.
+    const csvRowSchema = z.object({
+        creditorName: z.string().min(2, "שם הנושה חסר או קצר מדי."),
+        amount: z.coerce.number().positive("הסכום חייב להיות מספר חיובי."),
+        dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך היעד חייב להיות בפורמט YYYY-MM-DD"),
+        // Optional fields
+        description: z.string().optional().nullable(),
+        originalAmount: z.coerce.number().positive().optional().nullable(),
+        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+        status: z.enum(['active', 'paid', 'late']).default('active'),
+        paymentType: z.enum(['single', 'installments']).default('single'),
+        interestRate: z.coerce.number().optional().nullable(),
+        nextPaymentAmount: z.coerce.number().positive().optional().nullable(),
+        paymentMethod: z.string().optional().nullable(),
+        category: z.enum(["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"]).optional().nullable(),
+        isAutoPay: z.string().transform(val => val?.toLowerCase() === 'true').default('false'),
+    }).passthrough(); // Allow other columns, just ignore them.
+
+
     Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
             const collectionRef = collection(firestore, 'users', user.uid, 'transactions');
             let successCount = 0;
-            results.data.forEach((row: any) => {
-                try {
-                    // This is a basic transformation. For a real app, this would need
-                    // extensive validation and error handling (e.g. using Zod).
+            let errorCount = 0;
+            const errors: string[] = [];
+
+            results.data.forEach((row: any, index: number) => {
+                const validation = csvRowSchema.safeParse(row);
+
+                if (validation.success) {
+                    const validatedData = validation.data;
                     const newTransaction = {
-                        ...row,
-                        creditor: { name: row.creditorName },
-                        userId: user.uid,
-                        type: transactionType,
-                        amount: parseFloat(row.amount),
-                        originalAmount: row.originalAmount ? parseFloat(row.originalAmount) : null,
-                        interestRate: row.interestRate ? parseFloat(row.interestRate) : null,
-                        lateFee: row.lateFee ? parseFloat(row.lateFee) : null,
-                        nextPaymentAmount: row.nextPaymentAmount ? parseFloat(row.nextPaymentAmount) : null,
-                        numberOfPayments: row.numberOfPayments ? parseInt(row.numberOfPayments) : null,
-                        isAutoPay: row.isAutoPay?.toLowerCase() === 'true',
-                        status: row.status || 'active',
-                        paymentType: row.paymentType || 'single',
+                      creditor: { name: validatedData.creditorName },
+                      userId: user.uid,
+                      type: transactionType,
+                      amount: validatedData.amount,
+                      dueDate: validatedData.dueDate,
+                      status: validatedData.status,
+                      paymentType: validatedData.paymentType,
+                      isAutoPay: validatedData.isAutoPay,
+                      description: validatedData.description ?? null,
+                      originalAmount: validatedData.originalAmount ?? null,
+                      startDate: validatedData.startDate ?? null,
+                      interestRate: validatedData.interestRate ?? null,
+                      nextPaymentAmount: validatedData.nextPaymentAmount ?? null,
+                      paymentMethod: validatedData.paymentMethod ?? null,
+                      category: validatedData.category ?? null,
+                      // Add other fields that might be in the CSV
+                      accountNumber: validatedData.accountNumber ?? null,
+                      paymentUrl: validatedData.paymentUrl ?? null,
+                      interestType: validatedData.interestType ?? null,
+                      lateFee: validatedData.lateFee ? parseFloat(validatedData.lateFee) : null,
+                      collateral: validatedData.collateral ?? null,
+                      paymentFrequency: validatedData.paymentFrequency ?? null,
+                      priority: validatedData.priority ?? null,
+                      tags: validatedData.tags ?? null,
                     };
                     addDocumentNonBlocking(collectionRef, newTransaction);
                     successCount++;
-                } catch(e) {
-                    console.error("Could not import row:", row, e);
+                } else {
+                    errorCount++;
+                    const errorMessages = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+                    errors.push(`שורה ${index + 2}: ${errorMessages}`);
+                    console.error(`Validation failed for row ${index + 2}:`, validation.error.flatten());
                 }
             });
-            toast({ title: "הייבוא הושלם", description: `${successCount} מתוך ${results.data.length} רשומות יובאו בהצלחה.` });
+
+            if (errorCount > 0) {
+                 toast({ 
+                    variant: 'destructive',
+                    duration: 10000,
+                    title: `הייבוא הושלם עם ${errorCount} שגיאות`, 
+                    description: (
+                        <div className="text-xs">
+                            <p>{`יובאו בהצלחה ${successCount} רשומות. השגיאות הראשונות:`}</p>
+                            <ul className="list-disc pr-4 mt-2">
+                                {errors.slice(0, 3).map((e, i) => <li key={i}>{e}</li>)}
+                            </ul>
+                        </div>
+                    )
+                 });
+            } else {
+                 toast({ title: "הייבוא הושלם בהצלחה", description: `${successCount} רשומות יובאו.` });
+            }
         },
         error: (error) => {
-            toast({ variant: 'destructive', title: "הייבוא נכשל", description: error.message });
+            toast({ variant: 'destructive', title: "הייבוא נכשל", description: `שגיאת קריאת קובץ: ${error.message}` });
         }
     });
     // Reset file input

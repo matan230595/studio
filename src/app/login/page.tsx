@@ -3,27 +3,27 @@
 import { useAuth, useUser } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { AlertTriangle, LogIn } from 'lucide-react';
+import { AlertTriangle, LogIn, MailCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 
-// Note: This component no longer handles routing. AuthGuard is the single source of truth for navigation.
-
 export default function LoginPage() {
   const auth = useAuth();
-  const { user, isUserLoading } = useUser(); // We still need this to conditionally render
+  const { user, isUserLoading } = useUser(); 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<{ title: string, message: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Local loading state for form submission
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoginView, setIsLoginView] = useState(true);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
 
   const handleAuthError = (error: any) => {
     console.error('Login/Signup Error:', error);
@@ -34,7 +34,7 @@ export default function LoginPage() {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
-        message = 'אימייל או סיסמה לא נכונים.';
+        message = 'אימייל או סיסמה לא נכונים. ייתכן גם שטרם אימתת את כתובת האימייל שלך.';
         break;
       case 'auth/invalid-email':
         message = 'כתובת האימייל אינה תקינה.';
@@ -62,15 +62,18 @@ export default function LoginPage() {
     
     setIsLoading(true);
     setError(null);
+    setShowVerificationMessage(false);
 
     try {
       if (isLoginView) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(userCredential.user);
+        await auth.signOut(); // Log out the user immediately after signup
+        setShowVerificationMessage(true);
+        setIsLoginView(true); // Switch to login view for clarity
       }
-      // On success, the onAuthStateChanged listener in FirebaseProvider will update the `user`
-      // state globally, and AuthGuard will handle the redirect.
     } catch (error: any) {
       handleAuthError(error);
     } finally {
@@ -78,14 +81,10 @@ export default function LoginPage() {
     }
   };
 
-  // While the global user state is loading, or if the user is already logged in
-  // (and waiting for AuthGuard to redirect), we don't want to show the form.
-  // This prevents content flashing. AuthGuard handles showing a global loader.
   if (isUserLoading || user) {
     return null;
   }
   
-  // Only render the form if the user is definitively logged out.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex items-center justify-center gap-3 p-2 mb-8">
@@ -101,6 +100,19 @@ export default function LoginPage() {
               {isLoginView ? 'הזן את פרטיך כדי להתחבר לחשבונך' : 'צור חשבון חדש כדי להתחיל'}
             </CardDescription>
           </CardHeader>
+           {showVerificationMessage && (
+            <div className="px-6 pb-4">
+                <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3 text-start text-sm text-green-700">
+                    <div className="flex items-start gap-3">
+                        <MailCheck className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 text-right">
+                            <h4 className="font-bold">ההרשמה הושלמה!</h4>
+                            <p className="mt-1">שלחנו לך אימייל אימות. יש ללחוץ על הקישור באימייל כדי להפעיל את חשבונך לפני שתוכל להתחבר.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            )}
           <CardContent className="space-y-4 text-right">
             <div className="space-y-2">
               <Label htmlFor="email">אימייל</Label>
@@ -148,7 +160,7 @@ export default function LoginPage() {
             </Button>
             <p className="text-sm text-muted-foreground">
               {isLoginView ? 'אין לך חשבון? ' : 'יש לך כבר חשבון? '}
-              <Button variant="link" type="button" onClick={() => {setIsLoginView(!isLoginView); setError(null);}} className="p-0">
+              <Button variant="link" type="button" onClick={() => {setIsLoginView(!isLoginView); setError(null); setShowVerificationMessage(false);}} className="p-0">
                  {isLoginView ? 'הירשם כאן' : 'התחבר כאן'}
               </Button>
             </p>
