@@ -12,6 +12,8 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const LOGO_STORAGE_KEY = 'app-logo';
+const NOTIFICATION_SETTINGS_KEY = 'notification-settings';
+
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -19,21 +21,40 @@ export default function SettingsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [currentLogo, setCurrentLogo] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
+    
+    const [emailNotifications, setEmailNotifications] = useState(true);
+    const [pushNotifications, setPushNotifications] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
         try {
             setCurrentLogo(localStorage.getItem(LOGO_STORAGE_KEY));
+            const savedSettings = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+            if (savedSettings) {
+                const { email, push } = JSON.parse(savedSettings);
+                setEmailNotifications(email ?? true);
+                setPushNotifications(push ?? false);
+            }
         } catch (error) {
             console.error("Failed to read from localStorage:", error);
         }
     }, []);
 
     const handleSaveSettings = () => {
-        toast({
-        title: "ההגדרות נשמרו",
-        description: "העדפות ההתראות שלך עודכנו.",
-        });
+        try {
+            localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify({ email: emailNotifications, push: pushNotifications }));
+            toast({
+                title: "ההגדרות נשמרו",
+                description: "העדפות ההתראות שלך עודכנו.",
+            });
+        } catch (error) {
+            console.error("Failed to save to localStorage:", error);
+            toast({
+                title: "שגיאה בשמירת ההגדרות",
+                description: "לא ניתן היה לשמור את ההעדפות שלך.",
+                variant: 'destructive'
+            });
+        }
     };
 
     const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +104,7 @@ export default function SettingsPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 animate-in fade-in-50">
       <header>
         <div className="flex items-center gap-3">
-          <AppLogo className="h-12 w-12 text-primary" />
+          <AppLogo className="h-10 w-10 text-primary" />
           <h1 className="font-headline text-3xl font-bold tracking-tight">
             הגדרות
           </h1>
@@ -141,20 +162,28 @@ export default function SettingsPage() {
           <CardDescription>בחר את ערכת הנושא של המערכת.</CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'light' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('light')}>
-                    <Sun />
-                    בהיר
-                </Button>
-                <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'dark' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('dark')}>
-                    <Moon />
-                    כהה
-                </Button>
-                <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'system' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('system')}>
-                    <Laptop />
-                    מערכת
-                </Button>
-            </div>
+            {isMounted ? (
+                <div className="grid grid-cols-3 gap-2">
+                    <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'light' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('light')}>
+                        <Sun />
+                        בהיר
+                    </Button>
+                    <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'dark' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('dark')}>
+                        <Moon />
+                        כהה
+                    </Button>
+                    <Button variant="outline" className={cn("h-auto py-4 flex-col gap-2", theme === 'system' && 'border-primary ring-2 ring-primary')} onClick={() => setTheme('system')}>
+                        <Laptop />
+                        מערכת
+                    </Button>
+                </div>
+            ) : (
+                 <div className="grid grid-cols-3 gap-2">
+                    <div className="h-[76px] w-full rounded-md bg-muted animate-pulse" />
+                    <div className="h-[76px] w-full rounded-md bg-muted animate-pulse" />
+                    <div className="h-[76px] w-full rounded-md bg-muted animate-pulse" />
+                 </div>
+            )}
         </CardContent>
       </Card>
       
@@ -176,7 +205,8 @@ export default function SettingsPage() {
             </div>
             <Switch
               id="email-notifications"
-              defaultChecked
+              checked={emailNotifications}
+              onCheckedChange={setEmailNotifications}
             />
           </div>
           <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
@@ -185,13 +215,14 @@ export default function SettingsPage() {
               <div className="space-y-0.5">
                 <Label htmlFor="push-notifications" className="text-base">התראות דחיפה (Push)</Label>
                 <p className="text-sm text-muted-foreground">
-                  קבל התראות בזמן אמת ישירות למכשיר שלך. (בקרוב)
+                  קבל התראות בזמן אמת ישירות למכשיר שלך.
                 </p>
               </div>
             </div>
             <Switch
               id="push-notifications"
-              disabled
+              checked={pushNotifications}
+              onCheckedChange={setPushNotifications}
             />
           </div>
         </CardContent>
