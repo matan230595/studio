@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
@@ -13,18 +14,39 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarTrigger,
+  SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Home, Landmark, FileText, Settings, Bell, Banknote, LogOut, Sparkles, Menu } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from './ui/button';
+import { getUpcomingReminders } from '@/lib/financial-utils';
+import type { Transaction } from '@/lib/data';
+import { collection } from 'firebase/firestore';
+
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'transactions');
+  }, [user, firestore]);
+
+  const { data: transactions } = useCollection<Transaction>(transactionsQuery);
+
+  const notificationCount = React.useMemo(() => {
+    if (!transactions) return 0;
+    const reminders = getUpcomingReminders(transactions, 7);
+    const lateItems = transactions.filter(t => t.status === 'late');
+    return reminders.length + lateItems.length;
+  }, [transactions]);
+
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -97,6 +119,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuButton isActive={pathname.startsWith('/notifications')} tooltip={{children: 'התראות', side: 'left'}}>
                   <Bell />
                   <span>התראות</span>
+                   {notificationCount > 0 && (
+                    <SidebarMenuBadge className="bg-destructive text-destructive-foreground">
+                      {notificationCount}
+                    </SidebarMenuBadge>
+                  )}
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
