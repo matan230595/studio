@@ -220,29 +220,45 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
 
     // Zod schema for a row in the CSV file.
     const csvRowSchema = z.object({
-        creditorName: z.string().min(2, "שם הנושה חסר או קצר מדי."),
-        amount: z.coerce.number().positive("הסכום חייב להיות מספר חיובי."),
-        dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך היעד חייב להיות בפורמט YYYY-MM-DD"),
-        description: z.string().optional().nullable(),
-        originalAmount: z.coerce.number().positive().optional().nullable(),
-        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-        status: z.enum(['active', 'paid', 'late']).default('active'),
-        paymentType: z.enum(['single', 'installments']).default('single'),
-        interestRate: z.coerce.number().optional().nullable(),
-        nextPaymentAmount: z.coerce.number().positive().optional().nullable(),
-        paymentMethod: z.string().optional().nullable(),
-        category: z.enum(["דיור", "רכב", "לימודים", "עסק", "אישי", "אחר"]).optional().nullable(),
-        isAutoPay: z.string().transform(val => val?.toLowerCase() === 'true').default('false'),
-        accountNumber: z.string().optional().nullable(),
-        paymentUrl: z.string().url({ message: "כתובת אינטרנט לא תקינה." }).optional().nullable(),
-        interestType: z.enum(['קבועה', 'משתנה']).optional().nullable(),
-        lateFee: z.coerce.number().positive().optional().nullable(),
-        collateral: z.string().optional().nullable(),
-        paymentFrequency: z.enum(['יומי', 'שבועי', 'דו-שבועי', 'חודשי', 'רבעוני', 'שנתי']).optional().nullable(),
-        priority: z.enum(['נמוכה', 'בינונית', 'גבוהה']).optional().nullable(),
-        tags: z.string().optional().nullable(),
-        creditorPhone: z.string().optional().nullable(),
-        creditorEmail: z.string().email().optional().nullable(),
+      creditorName: z.string().min(2),
+      amount: z.coerce.number().positive(),
+      dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    
+      // Optional strings
+      description: z.string().optional().nullable(),
+      accountNumber: z.string().optional().nullable(),
+      paymentUrl: z.string().url().optional().nullable(),
+      collateral: z.string().optional().nullable(),
+      tags: z.string().optional().nullable(),
+      paymentMethod: z.string().optional().nullable(),
+      creditorPhone: z.string().optional().nullable(),
+      creditorEmail: z.string().email().optional().nullable(),
+
+    
+      // Optional numbers
+      originalAmount: z.coerce.number().positive().optional().nullable(),
+      interestRate: z.coerce.number().optional().nullable(),
+      nextPaymentAmount: z.coerce.number().positive().optional().nullable(),
+      lateFee: z.coerce.number().optional().nullable(),
+    
+      // Optional enums (as per src/lib/data.ts)
+      interestType: z.enum(["קבועה","משתנה"]).optional().nullable(),
+      paymentFrequency: z.enum(["יומי","שבועי","דו-שבועי","חודשי","רבעוני","שנתי"]).optional().nullable(),
+      priority: z.enum(["נמוכה","בינונית","גבוהה"]).optional().nullable(),
+      category: z.enum(["דיור","רכב","לימודים","עסק","אישי","אחר"]).optional().nullable(),
+    
+      // Defaults
+      status: z.enum(["active","paid","late"]).default("active"),
+      paymentType: z.enum(["single","installments"]).default("single"),
+    
+      // Correct boolean handling
+      isAutoPay: z.preprocess(
+        (v) => String(v).toLowerCase() === "true",
+        z.boolean()
+      ).default(false),
+    
+      // Date
+      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
     }).passthrough();
 
 
