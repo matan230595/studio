@@ -24,6 +24,7 @@ import { Button } from './ui/button';
 import { getUpcomingReminders } from '@/lib/financial-utils';
 import type { Transaction } from '@/lib/data';
 import { collection } from 'firebase/firestore';
+import { AppLogo } from './app-logo';
 
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -67,9 +68,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar side="right" collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center gap-3 p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-8 w-8 text-sidebar-primary"><rect width="256" height="256" fill="none"/><path fill="currentColor" d="M208,56V200a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V56A16,16,0,0,1,64,40H192A16,16,0,0,1,208,56ZM96,168a8,8,0,0,0,8,8h48a8,8,0,0,0,0-16H104A8,8,0,0,0,96,168Zm8-40a8,8,0,0,0,0,16h48a8,8,0,0,0,0-16Z"/></svg>
-            <h1 className="font-headline text-2xl font-bold text-sidebar-primary-foreground group-data-[collapsible=icon]:hidden">DebtWise</h1>
+           <div className="flex items-center justify-between gap-3 p-2">
+            <div className="flex items-center gap-3">
+              <AppLogo />
+              <h1 className="font-headline text-2xl font-bold text-sidebar-primary-foreground group-data-[collapsible=icon]:hidden">DebtWise</h1>
+            </div>
+             <SidebarTrigger className="hidden md:flex" />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -161,7 +165,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
-            <SidebarTrigger className="hidden md:flex" />
             <SidebarTrigger className="md:hidden">
               <Menu />
             </SidebarTrigger>
