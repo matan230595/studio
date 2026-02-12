@@ -128,14 +128,23 @@ const assistantFlow = ai.defineFlow(
     const responseText = llmResponse.text;
 
     try {
-        const cleanedJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleanedJsonString);
+      // Find the start and end of the JSON object
+      const startIndex = responseText.indexOf('{');
+      const endIndex = responseText.lastIndexOf('}');
+
+      if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+        const jsonString = responseText.substring(startIndex, endIndex + 1);
+        const parsed = JSON.parse(jsonString);
         return AssistantOutputSchema.parse(parsed);
-    } catch (e) {
-        console.error("Failed to parse AI JSON response:", e, "Raw response:", responseText);
-        // Fallback: if parsing fails, it might be that the model just returned the string directly.
-        // Let's try to wrap it in the expected object structure.
+      } else {
+        // If no JSON object is found, fallback to treating the whole response as a string.
+        console.warn("No valid JSON object found in AI response. Using fallback.", "Raw response:", responseText);
         return { response: responseText };
+      }
+    } catch (e) {
+      console.error("Failed to parse AI JSON response:", e, "Raw response:", responseText);
+      // If parsing still fails, use the fallback.
+      return { response: responseText };
     }
   }
 );
