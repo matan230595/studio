@@ -54,7 +54,7 @@ export default function AssistantPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading || isLoadingTransactions) return;
+    if (!input.trim() || isLoading || isLoadingTransactions || !user) return;
 
     const userMessage: Message = { role: 'user', content: input, id: `user-${Date.now()}` };
     const currentMessages = [...messages, userMessage];
@@ -75,6 +75,7 @@ export default function AssistantPage() {
       const upcomingPayments = getUpcomingPayments(transactions);
 
       const response = await askAssistant({ 
+        userId: user.uid,
         query: input,
         history: messages, // Pass messages *before* adding the new user message
         transactions,

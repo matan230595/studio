@@ -39,6 +39,7 @@ const ChatMessageSchema = z.object({
 });
 
 const AssistantInputSchema = z.object({
+  userId: z.string().describe("The user's unique ID for rate limiting."),
   query: z.string().describe('The user\'s question about their financial situation.'),
   history: z.array(ChatMessageSchema).optional().describe('The preceding conversation history.'),
   summary: FinancialSummarySchema,
@@ -116,6 +117,45 @@ const prompt = ai.definePrompt({
 עכשיו, נתח את המידע וספק תשובה מקיפה וחכמה בתוך אובייקט ה-JSON.`,
 });
 
+// In-memory store for rate limiting. In a production environment, use a persistent store like Redis.
+const userRequestTimestamps: Record<string, number> = {};
+const RATE_LIMIT_MS = 5000; // 5 seconds between requests per user
+
+/**
+ * A wrapper function that adds a retry mechanism with exponential backoff for API calls
+ * that fail with a 429 "Too Many Requests" error.
+ * @param fn The async function to execute.
+ * @param maxRetries The maximum number of retries.
+ * @returns The result of the provided function.
+ */
+async function withRetryOn429<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      const is429 = msg.includes("429") || msg.includes("Too Many Requests");
+
+      if (!is429 || attempt >= maxRetries) {
+        // If it's not a 429 error or we've exceeded retries, re-throw the error.
+        throw err;
+      }
+
+      attempt++;
+
+      // Extract the suggested wait time from the error message, otherwise use exponential backoff.
+      const retryAfterMatch = msg.match(/retry in ([0-9.]+)s/i);
+      const waitMs = retryAfterMatch
+        ? Math.ceil(parseFloat(retryAfterMatch[1]) * 1000)
+        : 1000 * 2 ** attempt;
+      
+      console.log(`Rate limit hit. Retrying in ${waitMs}ms... (Attempt ${attempt})`);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
 const assistantFlow = ai.defineFlow(
   {
     name: 'assistantFlow',
@@ -123,7 +163,18 @@ const assistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async (input) => {
-    const llmResponse = await prompt(input);
+    // 1. Per-user rate limiting
+    const { userId } = input;
+    const now = Date.now();
+    const lastRequestTime = userRequestTimestamps[userId];
+
+    if (lastRequestTime && now - lastRequestTime < RATE_LIMIT_MS) {
+      return { response: "אתה שולח בקשות מהר מדי. אנא המתן מספר שניות ונסה שוב." };
+    }
+    userRequestTimestamps[userId] = now;
+    
+    // 2. Call the LLM with retry logic
+    const llmResponse = await withRetryOn429(() => prompt(input));
     const responseText = llmResponse.text;
 
     try {
