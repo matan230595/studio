@@ -1,6 +1,6 @@
 
 import type { Transaction } from '@/lib/data';
-import { differenceInDays, isSameMonth, parseISO } from 'date-fns';
+import { differenceInDays, isSameMonth, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export type FinancialSummary = {
   totalOwed: number;
@@ -66,25 +66,26 @@ export function getUrgentItem(transactions: Transaction[]): Transaction | null {
 export function calculateSpendingByCategory(transactions: Transaction[], budgetMonth: string): Record<string, number> {
   if (!transactions || !budgetMonth) return {};
   
-  const budgetMonthDate = parseISO(budgetMonth + '-01');
+  const budgetMonthStart = startOfMonth(parseISO(`${budgetMonth}-01`));
+  const budgetMonthEnd = endOfMonth(budgetMonthStart);
 
   return transactions.reduce((acc, t) => {
-    if (!t.category) return acc;
+    if (!t.category || t.status === 'paid') return acc;
 
     const dueDate = parseISO(t.dueDate);
-    if (!isSameMonth(dueDate, budgetMonthDate)) {
-      return acc;
-    }
+    
+    // Check if the due date falls within the budget month
+    if (isWithinInterval(dueDate, { start: budgetMonthStart, end: budgetMonthEnd })) {
+        if (!acc[t.category]) {
+            acc[t.category] = 0;
+        }
 
-    if (!acc[t.category]) {
-      acc[t.category] = 0;
-    }
-      
-    // For installment loans, count the monthly payment. For single payments (debts or loans), count the full amount.
-    if (t.paymentType === 'installments' && t.nextPaymentAmount) {
-        acc[t.category] += t.nextPaymentAmount;
-    } else if (t.paymentType === 'single') {
-        acc[t.category] += t.amount;
+        // For installment loans, count the monthly payment. For single payments, count the full amount.
+        if (t.paymentType === 'installments' && t.nextPaymentAmount) {
+            acc[t.category] += t.nextPaymentAmount;
+        } else if (t.paymentType === 'single') {
+            acc[t.category] += t.amount;
+        }
     }
     
     return acc;

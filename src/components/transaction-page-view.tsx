@@ -1,7 +1,7 @@
 
 "use client";
 import React from 'react';
-import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, MoreHorizontal, Wallet, Calendar, FileText, ArrowUp, ArrowDown, Filter, X, FileUp } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, Pencil, Trash2, Banknote, Landmark, FileDown, MoreHorizontal, Wallet, Calendar, FileText, ArrowUp, ArrowDown, Filter, X, FileUp, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -123,6 +124,8 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = React.useState<Transaction | null>(null);
   const [detailsTransaction, setDetailsTransaction] = React.useState<Transaction | null>(null);
+  const [isImportHelpOpen, setIsImportHelpOpen] = React.useState(false);
+
   
   const [filters, setFilters] = React.useState({ status: 'all', category: 'all' });
   const [sortConfig, setSortConfig] = React.useState<SortConfig>({ key: 'dueDate', direction: 'ascending' });
@@ -562,10 +565,16 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
                 <TransactionForm onFinished={handleFormFinished} transaction={editingTransaction} fixedType={transactionType} />
             </DialogContent>
             </Dialog>
-            <Button variant="outline" size="sm" onClick={() => importFileInputRef.current?.click()}>
-              <FileUp className="ms-2 h-4 w-4" />
-              ייבוא
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => importFileInputRef.current?.click()}>
+                  <FileUp className="ms-2 h-4 w-4" />
+                  ייבוא
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setIsImportHelpOpen(true)}>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    <span className="sr-only">עזרה לגבי ייבוא</span>
+                </Button>
+            </div>
             <Input type="file" ref={importFileInputRef} className="hidden" accept=".csv" onChange={handleFileImport} />
              <Button variant="outline" size="sm" onClick={handleExport} disabled={processedTransactions.length === 0}>
               <FileDown className="ms-2 h-4 w-4" />
@@ -639,6 +648,41 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={isImportHelpOpen} onOpenChange={setIsImportHelpOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>הנחיות לייבוא קובץ CSV</DialogTitle>
+                  <DialogDescription>
+                      כדי לייבא {entityNamePlural} בהצלחה, יש לוודא שהקובץ שלך בפורמט CSV (עם קידוד UTF-8) ומכיל את העמודות הבאות. השורה הראשונה צריכה להיות שורת כותרת.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="text-sm max-h-80 overflow-y-auto pr-2">
+                  <p className="font-bold">שדות חובה:</p>
+                  <ul className="list-disc list-inside mr-4 space-y-1 mt-2">
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">creditorName</code>: שם הנושה/המלווה (טקסט).</li>
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">amount</code>: הסכום הנוכחי של ההתחייבות (מספר).</li>
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">dueDate</code>: תאריך יעד לתשלום בפורמט <strong className="text-red-500">YYYY-MM-DD</strong>.</li>
+                  </ul>
+                  <p className="font-bold mt-4">שדות אופציונליים:</p>
+                  <ul className="list-disc list-inside mr-4 space-y-1 mt-2">
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">startDate</code>: תאריך התחלה, באותו פורמט <strong className="text-red-500">YYYY-MM-DD</strong>.</li>
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">description</code>: תיאור ההתחייבות.</li>
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">category</code>: אחת מהאפשרויות: דיור, רכב, לימודים, עסק, אישי, אחר.</li>
+                      <li><code className="font-mono bg-muted p-1 rounded-sm">status</code>: אחת מהאפשרויות: active, paid, late (ברירת מחדל: active).</li>
+                      <li>...ועוד שדות רבים התואמים לטופס ההוספה.</li>
+                  </ul>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    הדרך הקלה ביותר להבין את הפורמט היא לייצא את הנתונים הקיימים, לערוך את הקובץ, ולייבא אותו מחדש.
+                  </p>
+              </div>
+               <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button">הבנתי</Button>
+                  </DialogClose>
+                </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </main>
   );
 }
