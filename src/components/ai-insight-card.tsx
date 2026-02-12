@@ -1,6 +1,5 @@
-
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,6 +7,7 @@ import { Lightbulb, RefreshCw } from 'lucide-react';
 import type { Transaction } from '@/lib/data';
 import { askAssistant } from '@/ai/flows/assistant-flow';
 import { calculateFinancialSummary, getLateTransactions, getUpcomingPayments } from '@/lib/financial-utils';
+import { useUser } from '@/firebase';
 
 interface AiInsightCardProps {
   transactions: Transaction[] | null;
@@ -17,6 +17,7 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
   const [insight, setInsight] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
 
   const financialData = useMemo(() => {
     if (!transactions) return null;
@@ -27,8 +28,8 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
   }, [transactions]);
 
   const fetchInsight = async () => {
-    if (!financialData) {
-        setError('לא ניתן להפיק תובנה ללא נתונים פיננסיים.');
+    if (!financialData || !user) {
+        setError('לא ניתן להפיק תובנה ללא נתונים פיננסיים או משתמש מחובר.');
         return;
     }
     
@@ -38,6 +39,7 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
 
     try {
       const response = await askAssistant({
+        userId: user.uid,
         query: "אני מסתכל על לוח המחוונים שלי עכשיו. נתח את המצב הפיננסי שלי וספק לי תובנה מרכזית אחת או המלצה לפעולה. התמקד בזיהוי דפוסים חשובים, סיכונים עתידיים, או הזדמנויות לשיפור. היה תמציתי ומעשי.",
         history: [],
         ...financialData,
@@ -58,7 +60,7 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
             <Lightbulb className="w-5 h-5 text-yellow-500" />
             <CardTitle className="text-lg">תובנת AI</CardTitle>
         </div>
-        <Button size="icon" variant="ghost" onClick={fetchInsight} disabled={isLoading || !transactions}>
+        <Button size="icon" variant="ghost" onClick={fetchInsight} disabled={isLoading || !transactions || !user}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </CardHeader>
