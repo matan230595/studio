@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker, DropdownProps } from "react-day-picker"
+import { DayPicker } from "react-day-picker"
 import { he } from "date-fns/locale"
 import { format } from "date-fns"
 
@@ -102,12 +102,12 @@ function Calendar({
       components={{
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-        Dropdown: ({ ...dropdownProps }: DropdownProps) => {
-          const { fromYear, toYear } = dropdownProps
+        Dropdown: (dropdownProps) => {
+          const { fromYear, toYear, name } = dropdownProps
           const currentYear = new Date().getFullYear()
           const selectedYear = currentMonth.getFullYear()
 
-          if (dropdownProps.name === "months") {
+          if (name === "months") {
             const months = Array.from({ length: 12 }, (_, i) => ({
               value: i,
               label: format(new Date(selectedYear, i, 1), "LLLL", {
@@ -137,7 +137,7 @@ function Calendar({
               </Select>
             )
           }
-          if (dropdownProps.name === "years") {
+          if (name === "years") {
             const years: number[] = []
             const start = fromYear || currentYear - 50
             const end = toYear || currentYear + 10
