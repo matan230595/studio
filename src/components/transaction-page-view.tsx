@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -686,3 +687,5 @@ export function TransactionPageView({ pageTitle, pageDescription, transactionTyp
     </main>
   );
 }
+
+    
