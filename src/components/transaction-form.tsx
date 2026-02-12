@@ -37,6 +37,7 @@ import {
 import { format, parse, addMonths } from "date-fns"
 import { Transaction, PAYMENT_METHODS } from "@/lib/data"
 import { mapTransactionToFormDefaults } from "@/lib/transactionFormMapper"
+import { cn } from "@/lib/utils"
 
 const optionalDateString = z.string().optional().or(z.literal(""));
 const requiredDateString = z.string().min(1, { message: "יש להזין תאריך יעד." });
@@ -120,6 +121,15 @@ export function TransactionForm({
   const numberOfPayments = form.watch("numberOfPayments")
 
   React.useEffect(() => {
+    // When creating a new transaction and the type is changed to debt,
+    // force paymentType to single, as debts in this app are single-payment.
+    if (type === 'debt' && !fixedType && !transaction) {
+        form.setValue('paymentType', 'single');
+    }
+  }, [type, form, fixedType, transaction]);
+
+
+  React.useEffect(() => {
     if (paymentType === 'installments' && startDate && numberOfPayments && numberOfPayments > 0) {
         try {
             const parsedStartDate = parse(startDate, 'dd/MM/yyyy', new Date());
@@ -142,7 +152,7 @@ export function TransactionForm({
 
       form.reset({
         type: fixedType || "debt",
-        paymentType: "single",
+        paymentType: fixedType === 'debt' ? "single" : "single",
         startDate: format(new Date(), "dd/MM/yyyy"),
         dueDate: format(defaultDueDate, "dd/MM/yyyy"),
         isAutoPay: false,
@@ -203,7 +213,7 @@ export function TransactionForm({
       description: values.description || null,
       startDate: isoStartDate || format(new Date(), 'yyyy-MM-dd'),
       dueDate: isoDueDate,
-      paymentType: values.paymentType,
+      paymentType: values.type === 'debt' ? 'single' : values.paymentType,
       paymentMethod: values.paymentMethod || null,
       interestRate: values.interestRate ?? null,
       nextPaymentAmount: values.nextPaymentAmount ?? null,
@@ -313,7 +323,7 @@ export function TransactionForm({
                   )}
                 />
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className={cn("grid grid-cols-1 gap-4", type === 'loan' && 'md:grid-cols-2')}>
                   <FormField
                     control={form.control}
                     name="amount"
@@ -334,24 +344,26 @@ export function TransactionForm({
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="originalAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>סכום מקורי (אופציונלי)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="5,000"
-                            {...field}
-                             value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {type === 'loan' && (
+                    <FormField
+                      control={form.control}
+                      name="originalAmount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>סכום מקורי (אופציונלי)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="5,000"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -373,7 +385,11 @@ export function TransactionForm({
                       name="dueDate"
                       render={({ field }) => (
                         <FormItem>
-                           <FormLabel>תאריך יעד / תשלום הבא</FormLabel>
+                           <FormLabel>
+                             {type === 'loan'
+                                ? (paymentType === 'installments' ? 'תאריך התשלום הבא' : 'תאריך פירעון סופי')
+                                : 'תאריך יעד לתשלום'}
+                           </FormLabel>
                             <FormControl>
                                 <Input type="text" placeholder="DD/MM/YYYY" {...field} value={field.value ?? ""} />
                             </FormControl>
@@ -440,38 +456,40 @@ export function TransactionForm({
            <AccordionItem value="item-3">
             <AccordionTrigger>תנאים וסיווג</AccordionTrigger>
             <AccordionContent className="space-y-4 pt-4">
-                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                     <FormField
-                        control={form.control}
-                        name="interestRate"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>ריבית שנתית (%)</FormLabel>
-                            <FormControl>
-                                <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    <FormField
-                        control={form.control}
-                        name="interestType"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>סוג ריבית</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                <FormControl><SelectTrigger><SelectValue placeholder="בחר סוג" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="קבועה">קבועה</SelectItem>
-                                    <SelectItem value="משתנה">משתנה</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                </div>
+                {type === 'loan' && (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                            control={form.control}
+                            name="interestRate"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>ריבית שנתית (%)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" step="0.1" placeholder="0" {...field} value={field.value ?? ""} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <FormField
+                            control={form.control}
+                            name="interestType"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>סוג ריבית</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                    <FormControl><SelectTrigger><SelectValue placeholder="בחר סוג" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="קבועה">קבועה</SelectItem>
+                                        <SelectItem value="משתנה">משתנה</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                    </div>
+                )}
                  <FormField
                   control={form.control}
                   name="lateFee"
@@ -552,33 +570,35 @@ export function TransactionForm({
           <AccordionItem value="item-4">
             <AccordionTrigger>הגדרות תשלום</AccordionTrigger>
             <AccordionContent className="space-y-4 pt-4">
-                <FormField
-                    control={form.control}
-                    name="paymentType"
-                    render={({ field }) => (
-                        <FormItem className="space-y-3">
-                        <FormLabel>אופן תשלום</FormLabel>
-                        <FormControl>
-                            <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="flex space-x-4 space-x-reverse"
-                            dir="rtl"
-                            >
-                            <FormItem className="flex items-center space-x-2 space-x-reverse">
-                                <FormControl><RadioGroupItem value="single" id="single" /></FormControl>
-                                <FormLabel htmlFor="single" className="font-normal">תשלום חד פעמי</FormLabel>
+                {type === 'loan' && (
+                    <FormField
+                        control={form.control}
+                        name="paymentType"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                            <FormLabel>אופן תשלום</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                className="flex space-x-4 space-x-reverse"
+                                dir="rtl"
+                                >
+                                <FormItem className="flex items-center space-x-2 space-x-reverse">
+                                    <FormControl><RadioGroupItem value="single" id="single" /></FormControl>
+                                    <FormLabel htmlFor="single" className="font-normal">תשלום חד פעמי</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-x-reverse">
+                                    <FormControl><RadioGroupItem value="installments" id="installments" /></FormControl>
+                                    <FormLabel htmlFor="installments" className="font-normal">תשלומים</FormLabel>
+                                </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
                             </FormItem>
-                            <FormItem className="flex items-center space-x-2 space-x-reverse">
-                                <FormControl><RadioGroupItem value="installments" id="installments" /></FormControl>
-                                <FormLabel htmlFor="installments" className="font-normal">תשלומים</FormLabel>
-                            </FormItem>
-                            </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+                        )}
+                        />
+                )}
                     {paymentType === "installments" && (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <FormField
