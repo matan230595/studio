@@ -141,7 +141,7 @@ export function TransactionForm({
             console.error("Could not parse start date to calculate due date:", e);
         }
     }
-  }, [startDate, numberOfPayments, paymentType, form]);
+  }, [startDate, numberOfPayments, paymentType, form.setValue]);
 
   React.useEffect(() => {
     if (transaction) {

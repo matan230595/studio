@@ -137,7 +137,7 @@ export default function BudgetPage() {
   const { data: allTransactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsQuery);
 
   const { totalBudgeted, totalSpent, remainingAmount, spendingByCategory, budgetWithSpending } = useMemo(() => {
-    const spendingByCategory = calculateSpendingByCategory(allTransactions || []);
+    const spendingByCategory = calculateSpendingByCategory(allTransactions || [], currentMonth);
     const totalSpent = Object.values(spendingByCategory).reduce((sum, amount) => sum + amount, 0);
 
     if (!budget) {
@@ -155,7 +155,7 @@ export default function BudgetPage() {
     });
 
     return { totalBudgeted, totalSpent, remainingAmount, spendingByCategory, budgetWithSpending };
-  }, [budget, allTransactions]);
+  }, [budget, allTransactions, currentMonth]);
   
   const isLoading = isBudgetLoading || isTransactionsLoading;
 
