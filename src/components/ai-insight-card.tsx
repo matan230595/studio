@@ -51,14 +51,6 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
     }
   };
 
-  useEffect(() => {
-    // Fetch insight on initial load if data is available
-    if (financialData) {
-        fetchInsight();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [financialData]); // Dependency on memoized data
-
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex-row items-center justify-between">
@@ -66,7 +58,7 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
             <Lightbulb className="w-5 h-5 text-yellow-500" />
             <CardTitle className="text-lg">תובנת AI</CardTitle>
         </div>
-        <Button size="icon" variant="ghost" onClick={fetchInsight} disabled={isLoading}>
+        <Button size="icon" variant="ghost" onClick={fetchInsight} disabled={isLoading || !transactions}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </CardHeader>
@@ -81,7 +73,7 @@ export function AiInsightCard({ transactions }: AiInsightCardProps) {
         {error && <p className="text-sm text-destructive text-center">{error}</p>}
         {insight && <p className="text-sm text-foreground">{insight}</p>}
          {!isLoading && !error && !insight && (
-            <p className="text-sm text-muted-foreground text-center">אין תובנות כרגע. לחץ על כפתור הרענון.</p>
+            <p className="text-sm text-muted-foreground text-center">לחץ על כפתור הרענון כדי לקבל תובנה.</p>
         )}
       </CardContent>
     </Card>
