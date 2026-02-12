@@ -2,7 +2,7 @@
 
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { firebaseApp } from '@/lib/firebase';
+import { firebaseApp } from '@/lib/firebase-app';
 
 export const auth = getAuth(firebaseApp);
 export const firestore = getFirestore(firebaseApp);
@@ -15,4 +15,4 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
-export { firebaseApp } from '@/lib/firebase';
+export { firebaseApp } from '@/lib/firebase-app';
