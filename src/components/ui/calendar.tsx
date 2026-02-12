@@ -4,17 +4,9 @@ import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 import { he } from "date-fns/locale"
-import { format } from "date-fns"
 
 import { cn } from "@/lib/utils"
-import { buttonVariants, Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select"
+import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -24,54 +16,16 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = React.useState<Date>(() => {
-    if (props.month) {
-      return props.month;
-    }
-  
-    if ("selected" in props) {
-      const selected = props.selected;
-  
-      if (selected instanceof Date) {
-        return selected;
-      }
-  
-      if (Array.isArray(selected) && selected.length > 0 && selected[0] instanceof Date) {
-        return selected[0];
-      }
-  
-      if (
-        typeof selected === "object" &&
-        selected !== null &&
-        "from" in selected &&
-        (selected as any).from instanceof Date
-      ) {
-        return (selected as any).from;
-      }
-    }
-  
-    return new Date();
-  });
-
-  React.useEffect(() => {
-    if (props.month) {
-      setCurrentMonth(props.month)
-    }
-  }, [props.month])
-
   return (
     <DayPicker
       locale={he}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
-      month={currentMonth}
-      onMonthChange={setCurrentMonth}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
-        caption_dropdowns: "flex gap-2 items-center",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -102,76 +56,8 @@ function Calendar({
       components={{
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-        Dropdown: (dropdownProps) => {
-          const { fromYear, toYear, name } = dropdownProps
-          const currentYear = new Date().getFullYear()
-          const selectedYear = currentMonth.getFullYear()
-
-          if (name === "months") {
-            const months = Array.from({ length: 12 }, (_, i) => ({
-              value: i,
-              label: format(new Date(selectedYear, i, 1), "LLLL", {
-                locale: he,
-              }),
-            }))
-            return (
-              <Select
-                value={String(currentMonth.getMonth())}
-                onValueChange={value => {
-                  const newMonth = new Date(currentMonth)
-                  newMonth.setMonth(Number(value))
-                  setCurrentMonth(newMonth)
-                }}
-                dir="rtl"
-              >
-                <SelectTrigger className="w-[120px] h-8 text-sm focus:ring-0 border-0 bg-transparent font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map(month => (
-                    <SelectItem key={month.value} value={String(month.value)}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )
-          }
-          if (name === "years") {
-            const years: number[] = []
-            const start = fromYear || currentYear - 50
-            const end = toYear || currentYear + 10
-            for (let i = start; i <= end; i++) {
-              years.push(i)
-            }
-            return (
-              <Select
-                value={String(selectedYear)}
-                onValueChange={value => {
-                  const newMonth = new Date(currentMonth)
-                  newMonth.setFullYear(Number(value))
-                  setCurrentMonth(newMonth)
-                }}
-                 dir="rtl"
-              >
-                <SelectTrigger className="w-[80px] h-8 text-sm focus:ring-0 border-0 bg-transparent font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )
-          }
-          return <></>;
-        },
       }}
       {...props}
-      captionLayout="dropdown-buttons"
     />
   )
 }
