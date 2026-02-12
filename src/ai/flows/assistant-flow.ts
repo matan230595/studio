@@ -60,6 +60,7 @@ export async function askAssistant(input: AssistantInput): Promise<AssistantOutp
 const prompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantInputSchema },
+  model: 'googleai/gemini-pro',
   prompt: `אתה "DebtWise", יועץ פיננסי וירטואלי מומחה. המטרה שלך היא לא רק לענות על שאלות, אלא לספק תובנות פרואקטיביות, לזהות דפוסים ולהציע אסטרטגיות שיעזרו למשתמש לנהל את ההתחייבויות שלו בצורה חכמה ויעילה.
 
 תמיד תענה בעברית. השתמש בטון מקצועי, מעודד וברור.
