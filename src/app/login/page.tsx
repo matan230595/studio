@@ -69,10 +69,10 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // After creation, the user is automatically logged in.
+        // We send the verification email. The AuthGuard will then
+        // see a logged-in, but unverified, user and show the VerifyEmailView.
         await sendEmailVerification(userCredential.user);
-        await auth.signOut(); // Log out the user immediately after signup
-        setShowVerificationMessage(true);
-        setIsLoginView(true); // Switch to login view for clarity
       }
     } catch (error: any) {
       handleAuthError(error);
